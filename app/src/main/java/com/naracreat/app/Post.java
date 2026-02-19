@@ -13,16 +13,13 @@ public class Post {
     public String videoUrl;
 
     @SerializedName("duration_minutes")
-    public int durationMinutes;
+    public Integer durationMinutes;
 
-    public int views;
+    public Integer views;
 
     @SerializedName("published_at")
     public String publishedAt;
 
     @SerializedName("created_at")
     public String createdAt;
-
-    // kalau API ada description, aktifin:
-    public String description;
 }
