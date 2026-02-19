@@ -22,13 +22,14 @@ public class PlayerActivity extends AppCompatActivity {
     private ExoPlayer player;
     private PlayerView playerView;
 
-    private TextView tvTitle, tvViews, tvTimeAgo, tvDesc, tvChannelName, tvChannelMeta;
+    private TextView tvTitle, tvViews, tvTimeAgo, tvDesc;
     private Button btnSawer;
-    private boolean descOpen = false;
 
     private RecyclerView rvRelated;
     private RelatedAdapter relatedAdapter;
     private final List<Post> related = new ArrayList<>();
+
+    private boolean descOpen = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,53 +37,45 @@ public class PlayerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_player);
 
         playerView = findViewById(R.id.playerView);
-
         tvTitle = findViewById(R.id.tvTitle);
         tvViews = findViewById(R.id.tvViews);
         tvTimeAgo = findViewById(R.id.tvTimeAgo);
         tvDesc = findViewById(R.id.tvDescription);
-
-        tvChannelName = findViewById(R.id.tvChannelName);
-        tvChannelMeta = findViewById(R.id.tvChannelMeta);
         btnSawer = findViewById(R.id.btnSawer);
 
         rvRelated = findViewById(R.id.rvRelated);
         rvRelated.setLayoutManager(new LinearLayoutManager(this));
-        relatedAdapter = new RelatedAdapter(related, p -> openPlayer(p));
+        relatedAdapter = new RelatedAdapter(related, this::openPlayer);
         rvRelated.setAdapter(relatedAdapter);
 
-        // ====== data dari Intent (set dari HomeAdapter) ======
+        // ===== Ambil data dari Intent =====
         String title = getIntent().getStringExtra("title");
         String videoUrl = getIntent().getStringExtra("video_url");
-        String desc = getIntent().getStringExtra("description");
+        String description = getIntent().getStringExtra("description");
         String views = getIntent().getStringExtra("views");
         String timeAgo = getIntent().getStringExtra("timeAgo");
 
         if (title == null) title = "Video";
-        if (desc == null) desc = "";
+        if (description == null) description = "";
         if (views == null) views = "—";
         if (timeAgo == null) timeAgo = "—";
 
         tvTitle.setText(title);
         tvViews.setText(views);
         tvTimeAgo.setText(timeAgo);
-        tvDesc.setText(desc);
+        tvDesc.setText(description);
 
-        // profile fixed sesuai request
-        tvChannelName.setText("ItsNara");
-        tvChannelMeta.setText("Support creator • Saweria");
-
-        // toggle deskripsi pas klik judul
+        // Toggle deskripsi saat klik judul
         tvTitle.setOnClickListener(v -> toggleDesc());
 
-        // sawer buka di dalam app (WebViewActivity)
+        // Tombol sawer buka di dalam app
         btnSawer.setOnClickListener(v -> {
             Intent i = new Intent(this, WebViewActivity.class);
             i.putExtra("url", "https://saweria.co/Narapoi");
             startActivity(i);
         });
 
-        // ====== init player ======
+        // ===== Init Player =====
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
 
@@ -93,9 +86,8 @@ public class PlayerActivity extends AppCompatActivity {
             player.play();
         }
 
-        // ====== TODO: fetch related random ======
-        // sementara dummy dulu. Nanti gue kasih function fetch dari /api/posts dan shuffle.
-        loadDummyRelated();
+        // ===== Dummy Related (anti error) =====
+        loadDummyRelated(videoUrl);
     }
 
     private void toggleDesc() {
@@ -106,23 +98,25 @@ public class PlayerActivity extends AppCompatActivity {
     private void openPlayer(Post p) {
         Intent i = new Intent(this, PlayerActivity.class);
         i.putExtra("title", p.title);
-        i.putExtra("video_url", p.video_url);
-        i.putExtra("description", p.description);
-        i.putExtra("views", p.views);
-        i.putExtra("timeAgo", p.timeAgo);
+        i.putExtra("video_url", p.videoUrl);
+        i.putExtra("description", p.slug); // sementara pakai slug
+        i.putExtra("views", p.views != null ? String.valueOf(p.views) : "—");
+        i.putExtra("timeAgo", p.publishedAt != null ? p.publishedAt : "—");
         startActivity(i);
     }
 
-    private void loadDummyRelated() {
+    private void loadDummyRelated(String currentVideoUrl) {
         related.clear();
-        for (int x = 1; x <= 8; x++) {
+
+        for (int x = 1; x <= 6; x++) {
             Post p = new Post();
             p.title = "Video Random " + x;
-            p.views = (1000 * x) + " views";
-            p.timeAgo = x + " jam lalu";
-            p.video_url = getIntent().getStringExtra("video_url"); // biar bisa play juga (dummy)
+            p.videoUrl = currentVideoUrl;
+            p.views = 1000 * x;
+            p.publishedAt = "2026-02-20T00:00:00Z";
             related.add(p);
         }
+
         Collections.shuffle(related);
         relatedAdapter.notifyDataSetChanged();
     }
@@ -141,4 +135,4 @@ public class PlayerActivity extends AppCompatActivity {
             player = null;
         }
     }
-                             }
+}
