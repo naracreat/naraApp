@@ -6,4 +6,6 @@
     <color name="subtext">#A7A9B6</color>
     <color name="accent">#3AA3FF</color>
     <color name="line">#22283A</color>
+
+    <color name="ic_launcher_background">#0F1115</color>
 </resources>
