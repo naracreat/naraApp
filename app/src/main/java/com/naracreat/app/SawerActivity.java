@@ -6,35 +6,30 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SawerActivity extends AppCompatActivity {
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_sawer);
 
-        WebView wv = new WebView(this);
-        setContentView(wv);
-
-        WebSettings s = wv.getSettings();
+        WebView web = findViewById(R.id.web);
+        WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
 
-        wv.setWebViewClient(new WebViewClient());
-        String url = getIntent().getStringExtra("url");
-        if (url == null || url.isEmpty()) url = "https://saweria.co/Narapoi";
-        wv.loadUrl(url);
+        web.setWebViewClient(new WebViewClient());
+        web.loadUrl("https://saweria.co/Narapoi");
     }
 
     @Override
     public void onBackPressed() {
-        WebView wv = (WebView) findViewById(android.R.id.content).getRootView();
-        if (wv != null && wv.canGoBack()) {
-            wv.goBack();
-            return;
-        }
-        super.onBackPressed();
+        WebView web = findViewById(R.id.web);
+        if (web.canGoBack()) web.goBack();
+        else super.onBackPressed();
     }
 }
