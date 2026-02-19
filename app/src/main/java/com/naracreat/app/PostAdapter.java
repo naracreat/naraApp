@@ -1,9 +1,11 @@
 package com.naracreat.app;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,6 +30,11 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
         Post p = data.get(pos);
         h.title.setText(p.title);
         h.sub.setText(p.sub);
+
+        h.itemView.setOnClickListener(v -> {
+            Context c = v.getContext();
+            Toast.makeText(c, "Video: " + p.videoUrl, Toast.LENGTH_SHORT).show();
+        });
     }
 
     @Override
