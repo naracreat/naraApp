@@ -12,12 +12,15 @@
 
         <activity
             android:name=".PlayerActivity"
-            android:exported="false"
-            android:screenOrientation="sensorLandscape"/>
+            android:exported="false" />
+
+        <activity
+            android:name=".SawerActivity"
+            android:exported="false" />
 
         <activity
             android:name=".PremiumActivity"
-            android:exported="false"/>
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"
