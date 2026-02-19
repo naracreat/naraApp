@@ -1,21 +1,23 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.naracreat.app">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Internet buat ambil data dari web -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="NaraApp"
-        android:icon="@android:drawable/sym_def_app_icon"
         android:allowBackup="true"
-        android:supportsRtl="true">
+        android:label="NaraApp"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.NaraApp">
 
         <activity
-            android:name=".MainActivity"
+            android:name="com.naracreat.app.MainActivity"
             android:exported="true">
-
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
 
     </application>
