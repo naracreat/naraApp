@@ -9,15 +9,13 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.time.Duration;
-import java.time.Instant;
+import com.bumptech.glide.Glide;
+
 import java.util.List;
 
 public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
 
-    public interface OnClick {
-        void onClick(Post p);
-    }
+    public interface OnClick { void onClick(Post p); }
 
     private final List<Post> items;
     private final OnClick onClick;
@@ -27,8 +25,7 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
         this.onClick = onClick;
     }
 
-    @NonNull
-    @Override
+    @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_related, parent, false);
         return new VH(v);
@@ -38,23 +35,25 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
     public void onBindViewHolder(@NonNull VH h, int pos) {
         Post p = items.get(pos);
 
-        h.title.setText(safe(p.title));
+        h.title.setText(p.title != null ? p.title : "-");
 
-        String viewsText = formatViews(p.views);
-        String timeText = timeAgo(firstNonNull(p.publishedAt, p.createdAt));
+        String meta = formatViews(p.views) + " • " + TimeAgoUtil.timeAgo(p.createdAt);
+        h.meta.setText(meta);
 
-        h.meta.setText(viewsText + " • " + timeText);
-
-        // Thumbnail: sementara pakai icon (nanti bisa pasang Glide buat URL)
-        h.thumb.setImageResource(R.mipmap.ic_launcher);
+        if (p.thumbnailUrl != null && !p.thumbnailUrl.isEmpty()) {
+            Glide.with(h.thumb.getContext())
+                    .load(p.thumbnailUrl)
+                    .centerCrop()
+                    .into(h.thumb);
+        } else {
+            h.thumb.setImageResource(R.mipmap.ic_launcher);
+        }
 
         h.itemView.setOnClickListener(v -> onClick.onClick(p));
     }
 
     @Override
-    public int getItemCount() {
-        return items.size();
-    }
+    public int getItemCount() { return items.size(); }
 
     static class VH extends RecyclerView.ViewHolder {
         ImageView thumb;
@@ -68,37 +67,9 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
         }
     }
 
-    private String safe(String s) {
-        return s == null ? "" : s;
-    }
-
-    private String firstNonNull(String a, String b) {
-        return a != null ? a : b;
-    }
-
-    private String formatViews(Integer views) {
-        if (views == null) return "—";
-        if (views >= 1_000_000) return String.format("%.1fM", views / 1_000_000f);
-        if (views >= 1_000) return String.format("%.1fK", views / 1_000f);
-        return String.valueOf(views);
-    }
-
-    private String timeAgo(String iso) {
-        if (iso == null) return "—";
-        try {
-            Instant t = Instant.parse(iso);
-            Duration d = Duration.between(t, Instant.now());
-
-            long minutes = d.toMinutes();
-            long hours = d.toHours();
-            long days = d.toDays();
-
-            if (minutes < 1) return "baru saja";
-            if (minutes < 60) return minutes + " menit lalu";
-            if (hours < 24) return hours + " jam lalu";
-            return days + " hari lalu";
-        } catch (Exception e) {
-            return "—";
-        }
+    private String formatViews(int v) {
+        if (v >= 1_000_000) return String.format("%.1fM", v / 1_000_000f);
+        if (v >= 1_000) return String.format("%.1fK", v / 1_000f);
+        return String.valueOf(v);
     }
 }
