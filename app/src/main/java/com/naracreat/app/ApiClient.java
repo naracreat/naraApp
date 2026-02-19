@@ -4,15 +4,16 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
+    private static final String BASE_URL = "https://narahentai.pages.dev";
     private static Retrofit retrofit;
 
-    public static Retrofit get() {
+    public static Api api() {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()
-                    .baseUrl("https://narahentai.pages.dev/")
+                    .baseUrl(BASE_URL)
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
         }
-        return retrofit;
+        return retrofit.create(Api.class);
     }
 }
