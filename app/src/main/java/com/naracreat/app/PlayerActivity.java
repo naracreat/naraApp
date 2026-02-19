@@ -1,3 +1,4 @@
+
 package com.naracreat.app;
 
 import android.app.DownloadManager;
@@ -8,10 +9,9 @@ import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,198 +23,149 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class PlayerActivity extends AppCompatActivity {
 
     private ExoPlayer player;
-    private PlayerView playerView;
-
-    private TextView tvTitle, tvViews, tvTimeAgo, tvDescription, tvChannelName, tvChannelMeta;
-    private Button btnSawer;
-
-    private RecyclerView rvRelated;
-
-    private String videoUrl, title, description, createdAt;
-    private int views;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // paksa portrait biar "lurus"
+        // PAKSA PORTRAIT
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
         setContentView(R.layout.activity_player);
 
-        bindViews();
-        readIntent();
-        setupUI();
-        setupPlayer();
-        setupButtons();
-        setupRelatedDummy(); // nanti lo ganti fetch related beneran kalau mau
-    }
+        PlayerView playerView = findViewById(R.id.playerView);
+        TextView tvTitle = findViewById(R.id.tvTitle);
+        TextView tvViews = findViewById(R.id.tvViews);
+        TextView tvTimeAgo = findViewById(R.id.tvTimeAgo);
+        TextView tvDesc = findViewById(R.id.tvDescription);
+        ImageView imgChannel = findViewById(R.id.imgChannel);
+        TextView tvChannelName = findViewById(R.id.tvChannelName);
+        TextView tvChannelMeta = findViewById(R.id.tvChannelMeta);
+        Button btnSawer = findViewById(R.id.btnSawer);
 
-    private void bindViews() {
-        playerView = findViewById(R.id.playerView);
+        TextView btnLike = findViewById(R.id.btnLike);
+        TextView btnFav = findViewById(R.id.btnFav);
+        TextView btnDownload = findViewById(R.id.btnDownload);
+        TextView btnShare = findViewById(R.id.btnShare);
 
-        tvTitle = findViewById(R.id.tvTitle);
-        tvViews = findViewById(R.id.tvViews);
-        tvTimeAgo = findViewById(R.id.tvTimeAgo);
-        tvDescription = findViewById(R.id.tvDescription);
+        RecyclerView rvRelated = findViewById(R.id.rvRelated);
+        rvRelated.setLayoutManager(new LinearLayoutManager(this));
 
-        tvChannelName = findViewById(R.id.tvChannelName);
-        tvChannelMeta = findViewById(R.id.tvChannelMeta);
+        // DATA DARI INTENT
+        String title = getIntent().getStringExtra("title");
+        String videoUrl = getIntent().getStringExtra("video_url");
+        String createdAt = getIntent().getStringExtra("created_at");
+        int views = getIntent().getIntExtra("views", 0);
+        String desc = getIntent().getStringExtra("description");
 
-        btnSawer = findViewById(R.id.btnSawer);
-
-        rvRelated = findViewById(R.id.rvRelated);
-    }
-
-    private void readIntent() {
-        Intent i = getIntent();
-        videoUrl = i.getStringExtra("video_url"); // pastikan sender pakai key ini
-        title = i.getStringExtra("title");
-        description = i.getStringExtra("description");
-        createdAt = i.getStringExtra("created_at");
-        views = i.getIntExtra("views", 0);
-
-        if (videoUrl == null) videoUrl = "";
-        if (title == null) title = "-";
-        if (description == null) description = "";
-        if (createdAt == null) createdAt = "";
-    }
-
-    private void setupUI() {
-        tvTitle.setText(title);
-        tvViews.setText(formatViews(views));
-        tvTimeAgo.setText(TimeAgoUtil.timeAgo(createdAt));
-
-        // default hide
-        tvDescription.setVisibility(View.GONE);
-        tvDescription.setText(description);
-
-        // klik title toggle deskripsi
-        tvTitle.setOnClickListener(v -> {
-            if (tvDescription.getVisibility() == View.VISIBLE) {
-                tvDescription.setVisibility(View.GONE);
-            } else {
-                tvDescription.setVisibility(View.VISIBLE);
-            }
-        });
+        tvTitle.setText(title != null ? title : "—");
+        tvViews.setText(String.valueOf(views));
+        tvTimeAgo.setText(TimeUtil.timeAgo(createdAt != null ? createdAt : ""));
+        tvDesc.setText(desc != null ? desc : "—");
 
         tvChannelName.setText("ItsNara");
-        tvChannelMeta.setText("ADMIN");
+        tvChannelMeta.setText("ADMIN"); // FIX: jadi ADMIN
 
-        btnSawer.setOnClickListener(v -> {
-            Intent it = new Intent(PlayerActivity.this, SawerActivity.class);
-            it.putExtra("url", "https://saweria.co/Narapoi");
-            startActivity(it);
+        // Title toggle desc
+        tvTitle.setOnClickListener(v -> {
+            tvDesc.setVisibility(tvDesc.getVisibility() == android.view.View.VISIBLE
+                    ? android.view.View.GONE : android.view.View.VISIBLE);
         });
-    }
 
-    private void setupPlayer() {
+        // Sawer in-app
+        btnSawer.setOnClickListener(v -> startActivity(new Intent(this, SawerActivity.class)));
+
+        // PLAYER
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
-
-        if (!videoUrl.isEmpty()) {
-            MediaItem item = MediaItem.fromUri(Uri.parse(videoUrl));
-            player.setMediaItem(item);
+        if (videoUrl != null && !videoUrl.isEmpty()) {
+            player.setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)));
             player.prepare();
             player.play();
         }
-    }
 
-    private void setupButtons() {
-        // tombol di layout lo masih TextView (Suka/Favorit/Unduh/Bagikan)
-        // Jadi kita ambil via findViewById dengan id baru.
-        // Kalau id belum ada, lo tambahin id-nya di XML: tvLike, tvFav, tvDownload, tvShare
-
-        TextView tvLike = findViewById(R.id.tvLike);
-        TextView tvFav = findViewById(R.id.tvFav);
-        TextView tvDownload = findViewById(R.id.tvDownload);
-        TextView tvShare = findViewById(R.id.tvShare);
-
+        // LIKE / FAV (local)
         SharedPreferences sp = getSharedPreferences("nara", MODE_PRIVATE);
-        String keyLike = "like_" + videoUrl;
-        String keyFav = "fav_" + videoUrl;
+        String keyLike = "like_" + (title != null ? title : "");
+        String keyFav = "fav_" + (title != null ? title : "");
 
-        boolean liked = sp.getBoolean(keyLike, false);
-        boolean faved = sp.getBoolean(keyFav, false);
+        updateToggleText(btnLike, "Suka", sp.getBoolean(keyLike, false));
+        updateToggleText(btnFav, "Favorit", sp.getBoolean(keyFav, false));
 
-        tvLike.setText(liked ? "Suka" : "Suka");
-        tvFav.setText(faved ? "Favorit" : "Favorit");
-
-        tvLike.setOnClickListener(v -> {
-            boolean now = !sp.getBoolean(keyLike, false);
-            sp.edit().putBoolean(keyLike, now).apply();
-            Toast.makeText(this, now ? "Disukai" : "Batal suka", Toast.LENGTH_SHORT).show();
+        btnLike.setOnClickListener(v -> {
+            boolean newVal = !sp.getBoolean(keyLike, false);
+            sp.edit().putBoolean(keyLike, newVal).apply();
+            updateToggleText(btnLike, "Suka", newVal);
         });
 
-        tvFav.setOnClickListener(v -> {
-            boolean now = !sp.getBoolean(keyFav, false);
-            sp.edit().putBoolean(keyFav, now).apply();
-            Toast.makeText(this, now ? "Masuk favorit" : "Batal favorit", Toast.LENGTH_SHORT).show();
+        btnFav.setOnClickListener(v -> {
+            boolean newVal = !sp.getBoolean(keyFav, false);
+            sp.edit().putBoolean(keyFav, newVal).apply();
+            updateToggleText(btnFav, "Favorit", newVal);
         });
 
-        tvDownload.setOnClickListener(v -> {
-            if (videoUrl.isEmpty()) {
-                Toast.makeText(this, "URL video kosong", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            downloadVideo(videoUrl, safeFileName(title) + ".mp4");
+        // DOWNLOAD
+        btnDownload.setOnClickListener(v -> {
+            if (videoUrl == null || videoUrl.isEmpty()) return;
+
+            DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            DownloadManager.Request r = new DownloadManager.Request(Uri.parse(videoUrl));
+            r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
+                    "NaraApp_" + System.currentTimeMillis() + ".mp4");
+            dm.enqueue(r);
         });
 
-        tvShare.setOnClickListener(v -> {
+        // SHARE
+        btnShare.setOnClickListener(v -> {
+            if (videoUrl == null) return;
             Intent share = new Intent(Intent.ACTION_SEND);
             share.setType("text/plain");
-            share.putExtra(Intent.EXTRA_TEXT, title + "\n" + videoUrl);
+            share.putExtra(Intent.EXTRA_TEXT, (title != null ? title : "Video") + "\n" + videoUrl);
             startActivity(Intent.createChooser(share, "Bagikan"));
+        });
+
+        // RELATED LIST ambil dari API (random: page 1)
+        RelatedAdapter relatedAdapter = new RelatedAdapter(new ArrayList<>(), p -> {
+            Intent i = new Intent(this, PlayerActivity.class);
+            i.putExtra("title", p.title);
+            i.putExtra("video_url", p.videoUrl);
+            i.putExtra("thumbnail_url", p.thumbnailUrl);
+            i.putExtra("views", p.views != null ? p.views : 0);
+            i.putExtra("created_at", p.createdAt != null ? p.createdAt : (p.publishedAt != null ? p.publishedAt : ""));
+            i.putExtra("description", "—");
+            startActivity(i);
+            finish();
+        });
+        rvRelated.setAdapter(relatedAdapter);
+
+        ApiClient.api().posts(1).enqueue(new Callback<PostsResponse>() {
+            @Override public void onResponse(Call<PostsResponse> call, Response<PostsResponse> resp) {
+                if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
+                    relatedAdapter.notifyDataSetChanged();
+                    // hack simpel: replace list via reflection ga enak, jadi bikin adapter ulang:
+                    rvRelated.setAdapter(new RelatedAdapter(resp.body().items, relatedAdapter::onClick));
+                }
+            }
+            @Override public void onFailure(Call<PostsResponse> call, Throwable t) {}
         });
     }
 
-    private void downloadVideo(String url, String fileName) {
-        try {
-            DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
-            DownloadManager.Request req = new DownloadManager.Request(Uri.parse(url));
-            req.setTitle(fileName);
-            req.setDescription("Downloading...");
-            req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
-            dm.enqueue(req);
-            Toast.makeText(this, "Mulai download", Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            Toast.makeText(this, "Gagal download: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void setupRelatedDummy() {
-        rvRelated.setLayoutManager(new LinearLayoutManager(this));
-        rvRelated.setAdapter(new RelatedAdapter(new ArrayList<>(), p -> {
-            Intent it = new Intent(PlayerActivity.this, PlayerActivity.class);
-            it.putExtra("video_url", p.videoUrl);
-            it.putExtra("title", p.title);
-            it.putExtra("description", "");
-            it.putExtra("created_at", p.createdAt);
-            it.putExtra("views", p.views);
-            startActivity(it);
-        }));
-    }
-
-    private String formatViews(int v) {
-        if (v >= 1_000_000) return String.format("%.1fM", v / 1_000_000f);
-        if (v >= 1_000) return String.format("%.1fK", v / 1_000f);
-        return String.valueOf(v);
-    }
-
-    private String safeFileName(String s) {
-        return s.replaceAll("[\\\\/:*?\"<>|]", "_");
+    private void updateToggleText(TextView tv, String label, boolean active) {
+        tv.setText(active ? (label + " (ON)") : label);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        if (player != null) {
-            player.pause();
-        }
+        if (player != null) player.pause();
     }
 
     @Override
