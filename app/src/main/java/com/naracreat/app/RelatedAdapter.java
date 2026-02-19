@@ -34,42 +34,29 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
     @Override
     public void onBindViewHolder(@NonNull VH h, int pos) {
         Post p = items.get(pos);
+        h.title.setText(p.title != null ? p.title : "—");
 
-        h.title.setText(p.title != null ? p.title : "-");
+        String when = p.createdAt != null ? p.createdAt : p.publishedAt;
+        h.meta.setText((p.views != null ? p.views : 0) + " • " + TimeUtil.timeAgo(when != null ? when : ""));
 
-        String meta = formatViews(p.views) + " • " + TimeAgoUtil.timeAgo(p.createdAt);
-        h.meta.setText(meta);
-
-        if (p.thumbnailUrl != null && !p.thumbnailUrl.isEmpty()) {
-            Glide.with(h.thumb.getContext())
-                    .load(p.thumbnailUrl)
-                    .centerCrop()
-                    .into(h.thumb);
-        } else {
-            h.thumb.setImageResource(R.mipmap.ic_launcher);
-        }
+        Glide.with(h.thumb.getContext())
+                .load(p.thumbnailUrl)
+                .placeholder(R.mipmap.ic_launcher)
+                .into(h.thumb);
 
         h.itemView.setOnClickListener(v -> onClick.onClick(p));
     }
 
-    @Override
-    public int getItemCount() { return items.size(); }
+    @Override public int getItemCount() { return items != null ? items.size() : 0; }
 
     static class VH extends RecyclerView.ViewHolder {
         ImageView thumb;
         TextView title, meta;
-
         VH(@NonNull View itemView) {
             super(itemView);
             thumb = itemView.findViewById(R.id.imgThumb);
             title = itemView.findViewById(R.id.tvTitle);
             meta = itemView.findViewById(R.id.tvMeta);
         }
-    }
-
-    private String formatViews(int v) {
-        if (v >= 1_000_000) return String.format("%.1fM", v / 1_000_000f);
-        if (v >= 1_000) return String.format("%.1fK", v / 1_000f);
-        return String.valueOf(v);
     }
 }
