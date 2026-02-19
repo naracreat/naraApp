@@ -3,25 +3,20 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="14dp"
-    android:layout_marginBottom="12dp"
-    android:background="@android:color/white">
+    android:padding="12dp">
 
     <TextView
         android:id="@+id/postTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Judul"
-        android:textSize="16sp"
+        android:text="Title"
+        android:textSize="18sp"
         android:textStyle="bold"/>
 
     <TextView
         android:id="@+id/postSub"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Sub / channel / info"
-        android:textSize="12sp"
-        android:alpha="0.7"
-        android:layout_marginTop="4dp"/>
-
+        android:text="Subtitle"
+        android:textSize="14sp"/>
 </LinearLayout>

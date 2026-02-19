@@ -33,11 +33,14 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
         holder.title.setText(p.title);
         holder.sub.setText(p.sub);
 
-        holder.itemView.setOnClickListener(v -> {
-            Context c = v.getContext();
-            Intent i = new Intent(c, PlayerActivity.class);
-            i.putExtra("url", p.videoUrl);
-            c.startActivity(i);
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Context c = v.getContext();
+                Intent i = new Intent(c, PlayerActivity.class);
+                i.putExtra("url", p.videoUrl);
+                c.startActivity(i);
+            }
         });
     }
 
@@ -47,7 +50,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
     }
 
     public static class VH extends RecyclerView.ViewHolder {
-
         TextView title;
         TextView sub;
 
