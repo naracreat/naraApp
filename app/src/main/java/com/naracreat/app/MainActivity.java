@@ -3,82 +3,54 @@ package com.naracreat.app;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.bottomnavigation.BottomNavigationView;
-import com.google.android.material.tabs.TabLayout;
+import java.util.ArrayList;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private TabLayout tabLayout;
-    private BottomNavigationView bottomNav;
+    RecyclerView rv;
+    PostAdapter adapter;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tabLayout = findViewById(R.id.tabLayout);
-        bottomNav = findViewById(R.id.bottomNav);
+        rv = findViewById(R.id.rv);
+        rv.setLayoutManager(new LinearLayoutManager(this));
 
-        setupTabs();
-        setupBottomNav();
-
-        // default: Beranda
-        openFragment(new HomeFragment());
-        bottomNav.setSelectedItemId(R.id.nav_home);
-    }
-
-    private void setupTabs() {
-        tabLayout.addTab(tabLayout.newTab().setText("Ikuti"));
-        tabLayout.addTab(tabLayout.newTab().setText("Untuk Anda"));
-        tabLayout.addTab(tabLayout.newTab().setText("Anime"));
-        tabLayout.addTab(tabLayout.newTab().setText("Gratis"));
-        tabLayout.addTab(tabLayout.newTab().setText("Dracin"));
-        tabLayout.addTab(tabLayout.newTab().setText("Sorotan"));
-
-        // biarin aja (request 1: pencarian biarin)
-        // kalau mau tab filter beneran nanti tinggal map ke endpoint yang beda
-    }
-
-    private void setupBottomNav() {
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-
-            if (id == R.id.nav_home) {
-                openFragment(new HomeFragment());
-                return true;
-            }
-
-            if (id == R.id.nav_search) {
-                openFragment(new SimpleFragment("Cari (coming soon)"));
-                return true;
-            }
-
-            if (id == R.id.nav_premium) {
-                startActivity(new Intent(this, PremiumActivity.class));
-                return false; // biar gak “nyangkut” tab premium
-            }
-
-            if (id == R.id.nav_schedule) {
-                openFragment(new SimpleFragment("Jadwal (coming soon)"));
-                return true;
-            }
-
-            if (id == R.id.nav_me) {
-                openFragment(new SimpleFragment("Saya (coming soon)"));
-                return true;
-            }
-
-            return false;
+        adapter = new PostAdapter(new ArrayList<>(), p -> {
+            Intent i = new Intent(this, PlayerActivity.class);
+            i.putExtra("title", p.title);
+            i.putExtra("video_url", p.videoUrl);
+            i.putExtra("thumbnail_url", p.thumbnailUrl);
+            i.putExtra("views", p.views != null ? p.views : 0);
+            i.putExtra("created_at", p.createdAt != null ? p.createdAt : (p.publishedAt != null ? p.publishedAt : ""));
+            i.putExtra("description", "—"); // kalau nanti API ada description, tinggal isi
+            startActivity(i);
         });
+
+        rv.setAdapter(adapter);
+
+        loadPage(1);
     }
 
-    private void openFragment(Fragment f) {
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.container, f)
-                .commit();
+    private void loadPage(int page) {
+        ApiClient.api().posts(page).enqueue(new Callback<PostsResponse>() {
+            @Override public void onResponse(Call<PostsResponse> call, Response<PostsResponse> resp) {
+                if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
+                    adapter.setItems(resp.body().items);
+                }
+            }
+            @Override public void onFailure(Call<PostsResponse> call, Throwable t) {}
+        });
     }
 }
