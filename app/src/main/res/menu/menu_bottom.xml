@@ -1,0 +1,26 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:title="Beranda"
+        android:icon="@android:drawable/ic_menu_view" />
+
+    <item
+        android:id="@+id/nav_search"
+        android:title="Cari"
+        android:icon="@android:drawable/ic_menu_search" />
+
+    <item
+        android:id="@+id/nav_premium"
+        android:title="Premium"
+        android:icon="@android:drawable/btn_star_big_on" />
+
+    <item
+        android:id="@+id/nav_schedule"
+        android:title="Jadwal"
+        android:icon="@android:drawable/ic_menu_my_calendar" />
+
+    <item
+        android:id="@+id/nav_me"
+        android:title="Saya"
+        android:icon="@android:drawable/ic_menu_manage" />
+</menu>

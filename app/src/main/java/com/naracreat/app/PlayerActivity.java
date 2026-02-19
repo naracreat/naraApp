@@ -2,38 +2,43 @@ package com.naracreat.app;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.widget.TextView;
+import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-
 import androidx.media3.common.MediaItem;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 
 public class PlayerActivity extends AppCompatActivity {
 
-    private PlayerView playerView;
     private ExoPlayer player;
+    private PlayerView playerView;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
 
-        playerView = findViewById(R.id.player_view);
+        String title = getIntent().getStringExtra("title");
+        String videoUrl = getIntent().getStringExtra("videoUrl");
 
-        // ambil url dari Intent (nanti dari adapter kirim "url")
-        String url = getIntent().getStringExtra("url");
-        if (url == null || url.trim().isEmpty()) {
-            // fallback biar ga crash (nanti ganti)
-            url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+        TextView t = findViewById(R.id.playerTitle);
+        t.setText(title != null ? title : "Player");
+
+        playerView = findViewById(R.id.playerView);
+
+        if (videoUrl == null || videoUrl.trim().isEmpty()) {
+            Toast.makeText(this, "Video URL kosong", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
         }
 
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
 
-        MediaItem mediaItem = MediaItem.fromUri(Uri.parse(url));
-        player.setMediaItem(mediaItem);
+        MediaItem item = MediaItem.fromUri(Uri.parse(videoUrl));
+        player.setMediaItem(item);
         player.prepare();
         player.play();
     }
@@ -42,14 +47,7 @@ public class PlayerActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         if (player != null) {
-            player.pause();
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (player != null) {
+            playerView.setPlayer(null);
             player.release();
             player = null;
         }

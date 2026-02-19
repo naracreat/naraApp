@@ -1,13 +1,25 @@
 package com.naracreat.app;
 
-public class Post {
-    public final String title;
-    public final String sub;
-    public final String videoUrl;
+import com.google.gson.annotations.SerializedName;
 
-    public Post(String title, String sub, String videoUrl) {
-        this.title = title;
-        this.sub = sub;
-        this.videoUrl = videoUrl;
-    }
+public class Post {
+    public String title;
+    public String slug;
+
+    @SerializedName("thumbnail_url")
+    public String thumbnailUrl;
+
+    @SerializedName("video_url")
+    public String videoUrl;
+
+    @SerializedName("duration_minutes")
+    public int durationMinutes;
+
+    public int views;
+
+    @SerializedName("published_at")
+    public String publishedAt;
+
+    @SerializedName("created_at")
+    public String createdAt;
 }

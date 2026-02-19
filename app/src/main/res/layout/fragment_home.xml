@@ -6,26 +6,24 @@
     android:layout_height="match_parent"
     android:background="@color/bg">
 
-    <TextView
-        android:id="@+id/playerTitle"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:textColor="@color/text"
-        android:textStyle="bold"
-        android:textSize="16sp"
-        android:padding="10dp"
+        android:layout_height="0dp"
+        android:padding="12dp"
+        android:clipToPadding="false"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <androidx.media3.ui.PlayerView
-        android:id="@+id/playerView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:use_controller="true"
-        app:layout_constraintTop_toBottomOf="@id/playerTitle"
+    <ProgressBar
+        android:id="@+id/loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
