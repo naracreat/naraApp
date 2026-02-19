@@ -6,7 +6,6 @@
     android:background="@color/bg"
     android:orientation="vertical">
 
-    <!-- VIDEO -->
     <androidx.media3.ui.PlayerView
         android:id="@+id/playerView"
         android:layout_width="match_parent"
@@ -15,7 +14,6 @@
         android:keepScreenOn="true"
         android:focusable="true" />
 
-    <!-- CONTENT -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -27,7 +25,6 @@
             android:orientation="vertical"
             android:padding="14dp">
 
-            <!-- TITLE (click to toggle desc) -->
             <TextView
                 android:id="@+id/tvTitle"
                 android:layout_width="match_parent"
@@ -40,7 +37,6 @@
                 android:ellipsize="end"
                 android:paddingBottom="6dp" />
 
-            <!-- views + time -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -51,7 +47,7 @@
                     android:id="@+id/tvViews"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="8.7K"
+                    android:text="0"
                     android:textColor="@color/subtext"
                     android:textSize="13sp" />
 
@@ -66,23 +62,21 @@
                     android:id="@+id/tvTimeAgo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1 menit lalu"
+                    android:text="—"
                     android:textColor="@color/subtext"
                     android:textSize="13sp" />
             </LinearLayout>
 
-            <!-- DESCRIPTION (hidden until title clicked) -->
             <TextView
                 android:id="@+id/tvDescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Deskripsi..."
+                android:text="—"
                 android:textColor="@color/subtext"
                 android:textSize="14sp"
                 android:visibility="gone"
                 android:paddingBottom="12dp" />
 
-            <!-- PROFILE ROW -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -118,7 +112,7 @@
                         android:id="@+id/tvChannelMeta"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="—"
+                        android:text="ADMIN"
                         android:textColor="@color/subtext"
                         android:textSize="13sp" />
                 </LinearLayout>
@@ -133,7 +127,6 @@
                     android:textColor="@color/text" />
             </LinearLayout>
 
-            <!-- ACTION ROW (samain aja: like/fav/download/share style simple) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -142,6 +135,7 @@
                 android:paddingBottom="12dp">
 
                 <TextView
+                    android:id="@+id/btnLike"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -151,6 +145,7 @@
                     android:padding="10dp" />
 
                 <TextView
+                    android:id="@+id/btnFav"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -160,6 +155,7 @@
                     android:padding="10dp" />
 
                 <TextView
+                    android:id="@+id/btnDownload"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -169,6 +165,7 @@
                     android:padding="10dp" />
 
                 <TextView
+                    android:id="@+id/btnShare"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -178,14 +175,12 @@
                     android:padding="10dp" />
             </LinearLayout>
 
-            <!-- divider -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="@color/line"
                 android:layout_marginBottom="12dp" />
 
-            <!-- RELATED TITLE -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -195,7 +190,6 @@
                 android:textSize="16sp"
                 android:paddingBottom="10dp"/>
 
-            <!-- RELATED LIST -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvRelated"
                 android:layout_width="match_parent"
