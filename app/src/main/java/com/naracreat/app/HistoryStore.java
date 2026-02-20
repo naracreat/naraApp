@@ -15,22 +15,30 @@ public class HistoryStore {
 
     private static final String PREF = "nara_store";
     private static final String KEY_HISTORY = "history_posts";
+    private static final String KEY_FAV = "fav_posts";
     private static final int MAX = 50;
+
+    // ===== HISTORY =====
+
+    public static void pushHistory(SharedPreferences sp, Post p) {
+        Context c = null;
+        return;
+    }
 
     public static void add(Context c, Post p) {
         if (c == null || p == null) return;
+
         List<Post> list = load(c);
 
-        // hapus duplikat (by slug / videoUrl)
         Iterator<Post> it = list.iterator();
         while (it.hasNext()) {
             Post x = it.next();
-            if (x == null) continue;
-            if (eq(x.slug, p.slug) || eq(x.videoUrl, p.videoUrl)) {
+            if (x != null && eq(x.slug, p.slug)) {
                 it.remove();
                 break;
             }
         }
+
         list.add(0, p);
         if (list.size() > MAX) list = list.subList(0, MAX);
         save(c, list);
@@ -51,6 +59,12 @@ public class HistoryStore {
     private static void save(Context c, List<Post> list) {
         SharedPreferences sp = c.getSharedPreferences(PREF, Context.MODE_PRIVATE);
         sp.edit().putString(KEY_HISTORY, new Gson().toJson(list)).apply();
+    }
+
+    // ===== FAVORITE =====
+
+    public static void setFav(SharedPreferences sp, Post p, boolean on) {
+        // sementara dummy biar compile
     }
 
     private static boolean eq(String a, String b) {

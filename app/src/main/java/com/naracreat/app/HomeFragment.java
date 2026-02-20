@@ -15,7 +15,6 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Response;
@@ -25,12 +24,17 @@ public class HomeFragment extends Fragment {
     private RecyclerView rv;
     private PostAdapter adapter;
 
-    @Nullable @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
+
         View v = inflater.inflate(R.layout.fragment_home, container, false);
 
-        rv = v.findViewById(R.id.rvPosts);
+        rv = v.findViewById(R.id.rv); // pakai id rv
         rv.setLayoutManager(new LinearLayoutManager(getContext()));
+
         adapter = new PostAdapter(new ArrayList<>(), this::openPlayer);
         rv.setAdapter(adapter);
 
@@ -40,21 +44,16 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadPage(int page) {
-        if (getContext() == null) return;
-
-        if (!NetworkUtil.isOnline(getContext())) {
-            Toast.makeText(getContext(), "Offline / Error", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         ApiClient.api().getPosts(page).enqueue(new retrofit2.Callback<PostResponse>() {
             @Override
-            public void onResponse(@NonNull Call<PostResponse> call, @NonNull Response<PostResponse> response) {
-                if (!response.isSuccessful() || response.body() == null || response.body().items == null) {
-                    Toast.makeText(getContext(), "Offline / Error", Toast.LENGTH_SHORT).show();
-                    return;
+            public void onResponse(@NonNull Call<PostResponse> call,
+                                   @NonNull Response<PostResponse> response) {
+
+                if (response.body() != null && response.body().items != null) {
+                    adapter.setItems(response.body().items);
+                } else {
+                    Toast.makeText(getContext(), "Error load data", Toast.LENGTH_SHORT).show();
                 }
-                adapter.setItems(response.body().items);
             }
 
             @Override
@@ -65,14 +64,12 @@ public class HomeFragment extends Fragment {
     }
 
     private void openPlayer(Post p) {
-        if (getContext() == null || p == null) return;
         Intent i = new Intent(getContext(), PlayerActivity.class);
         i.putExtra("title", p.title);
         i.putExtra("video_url", p.videoUrl);
         i.putExtra("thumbnail_url", p.thumbnailUrl);
         i.putExtra("views", p.views != null ? p.views : 0);
-        i.putExtra("created_at", p.createdAt != null ? p.createdAt : (p.publishedAt != null ? p.publishedAt : ""));
-        i.putExtra("description", p.description != null ? p.description : "");
+        i.putExtra("created_at", p.timeSrc());
         startActivity(i);
     }
 }
