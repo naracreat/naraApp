@@ -23,6 +23,13 @@ public class Post {
     @SerializedName("created_at")
     public String createdAt;
 
-    // ✅ biar PlayerActivity/ProfileFragment ga error
+    // Optional (biar ga error kalau dipakai)
     public String description;
+
+    // ✅ helper buat adapter
+    public String timeSrc() {
+        if (createdAt != null && !createdAt.isEmpty()) return createdAt;
+        if (publishedAt != null && !publishedAt.isEmpty()) return publishedAt;
+        return "";
+    }
 }

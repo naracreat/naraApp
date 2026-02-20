@@ -56,7 +56,7 @@ public class HomeFragment extends Fragment {
     private void loadPosts(boolean fromPull) {
         if (!fromPull) swipe.setRefreshing(true);
 
-        ApiClient.get().create(ApiService.class)
+        ApiClient.api()
                 .getPosts(1)
                 .enqueue(new Callback<PostResponse>() {
                     @Override

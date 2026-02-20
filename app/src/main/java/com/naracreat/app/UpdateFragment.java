@@ -56,7 +56,7 @@ public class UpdateFragment extends Fragment {
     private void load(boolean fromPull) {
         if (!fromPull) swipe.setRefreshing(true);
 
-        ApiClient.get().create(ApiService.class)
+        ApiClient.api()
                 .getPosts(1)
                 .enqueue(new Callback<PostResponse>() {
                     @Override
