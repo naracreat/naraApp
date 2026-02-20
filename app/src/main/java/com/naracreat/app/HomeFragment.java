@@ -42,9 +42,9 @@ public class HomeFragment extends Fragment {
         loading.setVisibility(View.VISIBLE);
 
         ApiService api = ApiClient.get().create(ApiService.class);
-        api.getPosts().enqueue(new Callback<PostResponse>() {
+        api.getPosts().enqueue(new Callback<PostsResponse>() {
             @Override
-            public void onResponse(Call<PostResponse> call, Response<PostResponse> response) {
+            public void onResponse(Call<PostsResponse> call, Response<PostsResponse> response) {
                 loading.setVisibility(View.GONE);
 
                 if (!response.isSuccessful() || response.body() == null) {
@@ -55,7 +55,7 @@ public class HomeFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(Call<PostResponse> call, Throwable t) {
+            public void onFailure(Call<PostsResponse> call, Throwable t) {
                 loading.setVisibility(View.GONE);
                 Toast.makeText(getContext(), "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
             }
