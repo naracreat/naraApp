@@ -1,7 +1,5 @@
 package com.naracreat.app;
 
-import android.content.Context;
-import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +7,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -16,81 +15,102 @@ import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FeedAdapter extends RecyclerView.Adapter<FeedAdapter.VH> {
+public class FeedAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    public static class VH extends RecyclerView.ViewHolder {
-        ImageView thumb;
-        TextView title;
-        TextView meta;
-        TextView badgeDuration;
+    public interface OnPostClick { void onClick(Post p); }
 
-        public VH(@NonNull View itemView) {
-            super(itemView);
-            thumb = itemView.findViewById(R.id.thumb);
-            title = itemView.findViewById(R.id.title);
-            meta = itemView.findViewById(R.id.meta);
-            badgeDuration = itemView.findViewById(R.id.badgeDuration);
-        }
+    private static final int TYPE_PORTRAIT_ROW = 1;
+    private static final int TYPE_VIDEO = 2;
+
+    private final OnPostClick onClick;
+
+    private List<Post> portrait = new ArrayList<>();
+    private List<Post> feed = new ArrayList<>();
+
+    public FeedAdapter(OnPostClick onClick) {
+        this.onClick = onClick;
     }
 
-    private final Context context;
-    private final List<Post> items = new ArrayList<>();
+    public void setData(List<Post> all) {
+        portrait.clear();
+        feed.clear();
 
-    public FeedAdapter(Context context) {
-        this.context = context;
-    }
+        // Simple rule: 8 pertama jadi “poster potret” row
+        int take = Math.min(8, all.size());
+        for (int i = 0; i < take; i++) portrait.add(all.get(i));
+        for (int i = take; i < all.size(); i++) feed.add(all.get(i));
 
-    public void setItems(List<Post> data) {
-        items.clear();
-        if (data != null) items.addAll(data);
         notifyDataSetChanged();
     }
 
-    @NonNull
     @Override
-    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_feed_big, parent, false);
-        return new VH(v);
+    public int getItemViewType(int position) {
+        if (position == 0) return TYPE_PORTRAIT_ROW;
+        return TYPE_VIDEO;
+    }
+
+    @NonNull @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        if (viewType == TYPE_PORTRAIT_ROW) {
+            View v = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_portrait_row, parent, false);
+            return new PortraitRowVH(v);
+        }
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_video_card, parent, false);
+        return new VideoVH(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH h, int position) {
-        Post p = items.get(position);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (getItemViewType(position) == TYPE_PORTRAIT_ROW) {
+            PortraitRowVH h = (PortraitRowVH) holder;
+            h.rv.setLayoutManager(
+                    new LinearLayoutManager(h.rv.getContext(), LinearLayoutManager.HORIZONTAL, false)
+            );
+            h.rv.setAdapter(new PortraitAdapter(portrait, onClick::onClick));
+            return;
+        }
 
-        h.title.setText(p.title != null ? p.title : "-");
+        int idx = position - 1;
+        Post p = feed.get(idx);
+        VideoVH h = (VideoVH) holder;
 
-        String duration = formatDuration(p.durationMinutes);
-        h.badgeDuration.setText(duration);
+        h.title.setText(p.title != null ? p.title : "—");
+        String created = (p.createdAt != null && !p.createdAt.isEmpty()) ? p.createdAt : (p.publishedAt != null ? p.publishedAt : "");
+        int views = p.views != null ? p.views : 0;
+        h.meta.setText(views + " • " + TimeUtil.timeAgo(created));
 
-        String meta = (p.views) + " suka • " + (p.durationMinutes > 0 ? (p.durationMinutes + " min") : "-");
-        h.meta.setText(meta);
-
-        Glide.with(context)
+        Glide.with(h.thumb.getContext())
                 .load(p.thumbnailUrl)
                 .centerCrop()
                 .into(h.thumb);
 
-        h.itemView.setOnClickListener(v -> {
-            Intent i = new Intent(context, PlayerActivity.class);
-            i.putExtra("title", p.title);
-            i.putExtra("videoUrl", p.videoUrl);
-            context.startActivity(i);
-        });
+        h.itemView.setOnClickListener(v -> onClick.onClick(p));
     }
 
     @Override
     public int getItemCount() {
-        return items.size();
+        // +1 untuk portrait row
+        return 1 + feed.size();
     }
 
-    private String formatDuration(int minutes) {
-        if (minutes <= 0) return "00:00";
-        int h = minutes / 60;
-        int m = minutes % 60;
-        if (h > 0) {
-            return String.format("%02d:%02d:00", h, m);
-        } else {
-            return String.format("%02d:00", m);
+    static class VideoVH extends RecyclerView.ViewHolder {
+        ImageView thumb;
+        TextView title, meta;
+        VideoVH(View v) {
+            super(v);
+            thumb = v.findViewById(R.id.imgThumb);
+            title = v.findViewById(R.id.tvTitle);
+            meta = v.findViewById(R.id.tvMeta);
+        }
+    }
+
+    static class PortraitRowVH extends RecyclerView.ViewHolder {
+        RecyclerView rv;
+        PortraitRowVH(View v) {
+            super(v);
+            rv = v.findViewById(R.id.rvPortrait);
         }
     }
 }

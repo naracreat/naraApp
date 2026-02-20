@@ -8,7 +8,7 @@ public class ApiClient {
     private static final String BASE_URL = "https://narahentai.pages.dev/";
     private static Retrofit retrofit;
 
-    public static Retrofit get() {
+    public static Retrofit retrofit() {
         if (retrofit == null) {
             retrofit = new Retrofit.Builder()
                     .baseUrl(BASE_URL)
@@ -18,13 +18,7 @@ public class ApiClient {
         return retrofit;
     }
 
-    // INI YANG BIKIN ApiClient.api().posts(page) BISA
     public static Api api() {
-        return get().create(Api.class);
-    }
-
-    // Optional: kalau lo mau pakai ApiService juga
-    public static ApiService service() {
-        return get().create(ApiService.class);
+        return retrofit().create(Api.class);
     }
 }

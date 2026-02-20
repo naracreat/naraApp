@@ -1,13 +1,18 @@
 package com.naracreat.app;
 
 import android.os.Bundle;
-
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
+
+    private void load(Fragment f) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, f)
+                .commit();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -16,22 +21,15 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView nav = findViewById(R.id.bottomNav);
 
-        loadFragment(new HomeFragment());
+        load(new HomeFragment());
 
         nav.setOnItemSelectedListener(item -> {
-            if (item.getItemId() == R.id.nav_home) {
-                loadFragment(new HomeFragment());
-            } else {
-                loadFragment(new HomeFragment()); // sementara semua ke home
-            }
+            int id = item.getItemId();
+            if (id == R.id.nav_home) load(new HomeFragment());
+            else if (id == R.id.nav_update) load(new UpdateFragment());
+            else if (id == R.id.nav_premium) load(new PremiumFragment());
+            else if (id == R.id.nav_profile) load(new ProfileFragment());
             return true;
         });
-    }
-
-    private void loadFragment(Fragment f) {
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.fragmentContainer, f)
-                .commit();
     }
 }
