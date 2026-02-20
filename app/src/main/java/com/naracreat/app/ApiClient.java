@@ -12,6 +12,7 @@ public class ApiClient {
 
     public static ApiService api() {
         if (API == null) {
+
             OkHttpClient client = new OkHttpClient.Builder().build();
 
             Retrofit r = new Retrofit.Builder()
