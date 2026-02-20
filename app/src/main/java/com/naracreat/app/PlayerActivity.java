@@ -1,18 +1,10 @@
 package com.naracreat.app;
 
-import android.app.DownloadManager;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.media3.common.MediaItem;
 import androidx.media3.exoplayer.ExoPlayer;
@@ -28,166 +20,66 @@ import retrofit2.Response;
 
 public class PlayerActivity extends AppCompatActivity {
 
-    private ExoPlayer player;
+    ExoPlayer player;
 
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setContentView(R.layout.activity_player);
 
         PlayerView playerView = findViewById(R.id.playerView);
         TextView tvTitle = findViewById(R.id.tvTitle);
-        TextView tvViews = findViewById(R.id.tvViews);
-        TextView tvTimeAgo = findViewById(R.id.tvTimeAgo);
-        TextView tvDesc = findViewById(R.id.tvDescription);
-        ImageView imgChannel = findViewById(R.id.imgChannel);
-        TextView tvChannelName = findViewById(R.id.tvChannelName);
-        TextView tvChannelMeta = findViewById(R.id.tvChannelMeta);
-        Button btnSawer = findViewById(R.id.btnSawer);
+        TextView tvMeta = findViewById(R.id.tvTimeAgo);
 
-        TextView btnLike = findViewById(R.id.btnLike);
-        TextView btnFav = findViewById(R.id.btnFav);
-        TextView btnDownload = findViewById(R.id.btnDownload);
-        TextView btnShare = findViewById(R.id.btnShare);
+        String title = getIntent().getStringExtra("title");
+        String videoRaw = getIntent().getStringExtra("video_url");
+        String created = getIntent().getStringExtra("created_at");
+        int views = getIntent().getIntExtra("views", 0);
+
+        String videoUrl = UrlUtil.abs(videoRaw);
+
+        tvTitle.setText(title);
+        tvMeta.setText(views + " • " + TimeUtil.timeAgo(created));
+
+        player = new ExoPlayer.Builder(this).build();
+        playerView.setPlayer(player);
+
+        if (videoUrl != null) {
+            player.setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)));
+            player.prepare();
+            player.play();
+        }
 
         RecyclerView rvRelated = findViewById(R.id.rvRelated);
         rvRelated.setLayoutManager(new LinearLayoutManager(this));
 
-        // DATA DARI INTENT
-        String title = getIntent().getStringExtra("title");
-        String videoUrlRaw = getIntent().getStringExtra("video_url");
-        String thumbRaw = getIntent().getStringExtra("thumbnail_url");
-        String createdAt = getIntent().getStringExtra("created_at");
-        int views = getIntent().getIntExtra("views", 0);
-        String desc = getIntent().getStringExtra("description");
-
-        // absolutin URL
-        String videoUrl = UrlUtil.abs(videoUrlRaw);
-        String thumbUrl = UrlUtil.abs(thumbRaw);
-
-        tvTitle.setText(title != null ? title : "—");
-        tvViews.setText(String.valueOf(views));
-        tvTimeAgo.setText(TimeUtil.timeAgo(createdAt != null ? createdAt : ""));
-        tvDesc.setText(desc != null ? desc : "—");
-
-        tvChannelName.setText("ItsNara");
-        tvChannelMeta.setText("ADMIN");
-
-        // toggle desc
-        tvTitle.setOnClickListener(v -> {
-            tvDesc.setVisibility(tvDesc.getVisibility() == android.view.View.VISIBLE
-                    ? android.view.View.GONE : android.view.View.VISIBLE);
-        });
-
-        btnSawer.setOnClickListener(v -> startActivity(new Intent(this, SawerActivity.class)));
-
-        // PLAYER
-        player = new ExoPlayer.Builder(this).build();
-        playerView.setPlayer(player);
-
-        if (videoUrl != null && !videoUrl.isEmpty()) {
-            try {
-                player.setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)));
-                player.prepare();
-                player.play();
-            } catch (Exception ignored) { }
-        }
-
-        // LIKE / FAV (local)
-        SharedPreferences sp = getSharedPreferences("nara", MODE_PRIVATE);
-        String keyLike = "like_" + (title != null ? title : "");
-        String keyFav = "fav_" + (title != null ? title : "");
-
-        updateToggleText(btnLike, "Suka", sp.getBoolean(keyLike, false));
-        updateToggleText(btnFav, "Favorit", sp.getBoolean(keyFav, false));
-
-        btnLike.setOnClickListener(v -> {
-            boolean newVal = !sp.getBoolean(keyLike, false);
-            sp.edit().putBoolean(keyLike, newVal).apply();
-            updateToggleText(btnLike, "Suka", newVal);
-        });
-
-        btnFav.setOnClickListener(v -> {
-            boolean newVal = !sp.getBoolean(keyFav, false);
-            sp.edit().putBoolean(keyFav, newVal).apply();
-            updateToggleText(btnFav, "Favorit", newVal);
-        });
-
-        // DOWNLOAD
-        btnDownload.setOnClickListener(v -> {
-            if (videoUrl == null || videoUrl.isEmpty()) return;
-
-            DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
-            DownloadManager.Request r = new DownloadManager.Request(Uri.parse(videoUrl));
-            r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
-                    "NaraApp_" + System.currentTimeMillis() + ".mp4");
-            dm.enqueue(r);
-        });
-
-        // SHARE (pakai link aplikasi kamu + fallback)
-        btnShare.setOnClickListener(v -> {
-            String appLink = "https://narahentai.pages.dev/?title=" + Uri.encode(title != null ? title : "video");
-            String shareText = (title != null ? title : "Video") + "\n" + appLink;
-
-            // kalau kamu juga mau include direct video URL, uncomment:
-            // if (videoUrl != null && !videoUrl.isEmpty()) shareText += "\n" + videoUrl;
-
-            Intent share = new Intent(Intent.ACTION_SEND);
-            share.setType("text/plain");
-            share.putExtra(Intent.EXTRA_TEXT, shareText);
-            startActivity(Intent.createChooser(share, "Bagikan"));
-        });
-
-        // RELATED
         RelatedAdapter relatedAdapter = new RelatedAdapter(new ArrayList<>(), p -> {
             Intent i = new Intent(this, PlayerActivity.class);
             i.putExtra("title", p.title);
             i.putExtra("video_url", p.videoUrl);
             i.putExtra("thumbnail_url", p.thumbnailUrl);
             i.putExtra("views", p.views != null ? p.views : 0);
-
-            String when = (p.createdAt != null && !p.createdAt.isEmpty())
-                    ? p.createdAt
-                    : (p.publishedAt != null ? p.publishedAt : "");
-            i.putExtra("created_at", when);
-
-            i.putExtra("description", "—");
+            i.putExtra("created_at", p.createdAt);
             startActivity(i);
             finish();
         });
+
         rvRelated.setAdapter(relatedAdapter);
 
-        // ambil related page 1
         ApiClient.api().posts(1, null, null).enqueue(new Callback<PostResponse>() {
             @Override
             public void onResponse(Call<PostResponse> call, Response<PostResponse> resp) {
-                if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
+                if (resp.isSuccessful() && resp.body() != null) {
                     relatedAdapter.setItems(resp.body().items);
                 }
             }
-            @Override public void onFailure(Call<PostResponse> call, Throwable t) { }
+            @Override public void onFailure(Call<PostResponse> call, Throwable t) {}
         });
-    }
-
-    private void updateToggleText(TextView tv, String label, boolean active) {
-        tv.setText(active ? (label + " (ON)") : label);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (player != null) player.pause();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (player != null) {
-            player.release();
-            player = null;
-        }
+        if (player != null) player.release();
     }
 }
