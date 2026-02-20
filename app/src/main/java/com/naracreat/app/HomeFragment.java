@@ -39,9 +39,9 @@ public class HomeFragment extends Fragment {
     private void loadPosts() {
         ApiService api = ApiClient.get().create(ApiService.class);
 
-        api.getPosts(1).enqueue(new Callback<PostResponse>() {
+        api.getPosts(1).enqueue(new Callback<PostsResponse>() {
             @Override
-            public void onResponse(Call<PostResponse> call, Response<PostResponse> response) {
+            public void onResponse(Call<PostsResponse> call, Response<PostsResponse> response) {
                 if (!isAdded()) return;
 
                 if (response.isSuccessful() && response.body() != null && response.body().items != null) {
@@ -62,7 +62,7 @@ public class HomeFragment extends Fragment {
             }
 
             @Override
-            public void onFailure(Call<PostResponse> call, Throwable t) { }
+            public void onFailure(Call<PostsResponse> call, Throwable t) { }
         });
     }
 }
