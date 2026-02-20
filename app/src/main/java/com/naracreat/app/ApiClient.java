@@ -17,4 +17,9 @@ public class ApiClient {
         }
         return retrofit;
     }
+
+    // alias biar gak perlu ubah semua file
+    public static Retrofit api() {
+        return get();
+    }
 }
