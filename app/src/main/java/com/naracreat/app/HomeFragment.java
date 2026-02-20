@@ -41,22 +41,22 @@ public class HomeFragment extends Fragment {
 
         api.getPosts(1).enqueue(new Callback<PostResponse>() {
             @Override
-            public void onResponse(Call<PostResponse> call,
-                                   Response<PostResponse> response) {
+            public void onResponse(Call<PostResponse> call, Response<PostResponse> response) {
+                if (!isAdded()) return;
 
-                if (response.isSuccessful() && response.body() != null) {
-
+                if (response.isSuccessful() && response.body() != null && response.body().items != null) {
                     PostAdapter adapter = new PostAdapter(
                             response.body().items,
                             post -> {
                                 Intent i = new Intent(getContext(), PlayerActivity.class);
                                 i.putExtra("title", post.title);
                                 i.putExtra("video_url", post.videoUrl);
-                                i.putExtra("created_at", post.createdAt);
-                                i.putExtra("views", post.views != null ? post.views : 0);
+                                i.putExtra("created_at", post.createdAt != null ? post.createdAt : post.publishedAt);
+                                i.putExtra("views", post.views);
+                                i.putExtra("thumbnail_url", post.thumbnailUrl);
                                 startActivity(i);
-                            });
-
+                            }
+                    );
                     rvPosts.setAdapter(adapter);
                 }
             }
