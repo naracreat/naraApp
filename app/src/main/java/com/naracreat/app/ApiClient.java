@@ -6,15 +6,13 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
 
-    // TODO: ganti ini ke base URL API kamu (WAJIB diakhiri "/")
-    public static final String BASE_URL = "https://YOUR-DOMAIN-HERE/";
+    public static final String BASE_URL = "https://narahentai.pages.dev/";
 
     private static ApiService API;
 
     public static ApiService api() {
         if (API == null) {
-            OkHttpClient client = new OkHttpClient.Builder()
-                    .build();
+            OkHttpClient client = new OkHttpClient.Builder().build();
 
             Retrofit r = new Retrofit.Builder()
                     .baseUrl(BASE_URL)
