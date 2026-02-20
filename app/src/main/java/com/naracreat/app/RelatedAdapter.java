@@ -10,14 +10,13 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
 import java.util.List;
 
 public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
 
-    public interface OnClick {
-        void onClick(Post p);
-    }
+    public interface OnClick { void onClick(Post p); }
 
     private List<Post> items;
     private final OnClick onClick;
@@ -32,7 +31,8 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
         notifyDataSetChanged();
     }
 
-    @NonNull @Override
+    @NonNull
+    @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_related, parent, false);
         return new VH(v);
@@ -47,17 +47,22 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
         String timeSrc = (p.createdAt != null && !p.createdAt.isEmpty())
                 ? p.createdAt
                 : (p.publishedAt != null ? p.publishedAt : "");
-        String meta = p.views + " • " + TimeUtil.timeAgo(timeSrc);
+
+        int views = (p.views != null ? p.views : 0);
+        String meta = views + " • " + TimeUtil.timeAgo(timeSrc);
         h.meta.setText(meta);
 
-        // Thumbnail dari API
-        if (p.thumbnailUrl != null && !p.thumbnailUrl.isEmpty()) {
-            Glide.with(h.thumb.getContext())
-                    .load(p.thumbnailUrl)
-                    .into(h.thumb);
-        } else {
-            h.thumb.setImageResource(R.mipmap.ic_launcher);
-        }
+        // FIX: thumbnail url sering relatif, jadi harus dibuat absolute
+        String thumbUrl = UrlUtil.abs(p.thumbnailUrl);
+
+        Glide.with(h.thumb.getContext())
+                .load(thumbUrl)
+                .placeholder(R.mipmap.ic_launcher)
+                .error(R.mipmap.ic_launcher)
+                // biar gak "ketuker" / nyangkut cache pas debugging
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .into(h.thumb);
 
         h.itemView.setOnClickListener(v -> onClick.onClick(p));
     }
@@ -70,6 +75,7 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
     static class VH extends RecyclerView.ViewHolder {
         ImageView thumb;
         TextView title, meta;
+
         VH(@NonNull View itemView) {
             super(itemView);
             thumb = itemView.findViewById(R.id.imgThumb);
