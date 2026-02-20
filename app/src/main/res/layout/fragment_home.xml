@@ -20,7 +20,7 @@
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:textColor="@color/text"
-            android:hintTextColor="@color/subtext"
+            android:textColorHint="@color/subtext"
             android:background="@android:drawable/editbox_background"
             android:singleLine="true" />
     </LinearLayout>
