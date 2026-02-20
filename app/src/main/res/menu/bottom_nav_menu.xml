@@ -3,17 +3,15 @@
     <item
         android:id="@+id/nav_home"
         android:title="Beranda"
-        android:icon="@drawable/ic_home"/>
+        android:icon="@android:drawable/ic_menu_view"/>
+
     <item
         android:id="@+id/nav_update"
         android:title="Update"
-        android:icon="@drawable/ic_update"/>
-    <item
-        android:id="@+id/nav_premium"
-        android:title="Premium"
-        android:icon="@drawable/ic_diamond"/>
+        android:icon="@android:drawable/ic_menu_recent_history"/>
+
     <item
         android:id="@+id/nav_profile"
-        android:title="Profil"
-        android:icon="@drawable/ic_profile"/>
+        android:title="Saya"
+        android:icon="@android:drawable/ic_menu_myplaces"/>
 </menu>

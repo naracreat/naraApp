@@ -6,13 +6,30 @@
     android:background="@color/bg"
     android:orientation="vertical">
 
-    <androidx.media3.ui.PlayerView
-        android:id="@+id/playerView"
+    <FrameLayout
+        android:id="@+id/playerFrame"
         android:layout_width="match_parent"
         android:layout_height="220dp"
-        android:background="#000"
-        android:keepScreenOn="true"
-        android:focusable="true" />
+        android:background="#000">
+
+        <androidx.media3.ui.PlayerView
+            android:id="@+id/playerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#000"
+            android:keepScreenOn="true"
+            android:focusable="true" />
+
+        <ImageButton
+            android:id="@+id/btnFullscreen"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="10dp"
+            android:background="@android:color/transparent"
+            android:src="@android:drawable/ic_menu_crop"
+            android:tint="@android:color/white"/>
+    </FrameLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -47,7 +64,7 @@
                     android:id="@+id/tvViews"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0 views"
+                    android:text="0"
                     android:textColor="@color/subtext"
                     android:textSize="13sp" />
 
@@ -62,7 +79,7 @@
                     android:id="@+id/tvTimeAgo"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="—"
+                    android:text="-"
                     android:textColor="@color/subtext"
                     android:textSize="13sp" />
             </LinearLayout>

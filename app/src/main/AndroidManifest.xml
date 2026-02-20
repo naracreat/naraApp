@@ -13,19 +13,11 @@
         <activity
             android:name=".PlayerActivity"
             android:exported="false"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".SawerActivity"
-            android:exported="false"/>
-
-        <activity
-            android:name=".PremiumActivity"
-            android:exported="false"/>
-
-        <activity
-            android:name=".LoginActivity"
-            android:exported="false"/>
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"
@@ -37,4 +29,5 @@
         </activity>
 
     </application>
+
 </manifest>

@@ -13,14 +13,21 @@ public class SawerActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_web);
+        setContentView(R.layout.activity_sawer);
 
-        WebView wv = findViewById(R.id.webView);
-        WebSettings s = wv.getSettings();
+        WebView web = findViewById(R.id.web);
+        WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
 
-        wv.setWebViewClient(new WebViewClient());
-        wv.loadUrl("https://saweria.co/Narapoi");
+        web.setWebViewClient(new WebViewClient());
+        web.loadUrl("https://saweria.co/Narapoi");
+    }
+
+    @Override
+    public void onBackPressed() {
+        WebView web = findViewById(R.id.web);
+        if (web.canGoBack()) web.goBack();
+        else super.onBackPressed();
     }
 }

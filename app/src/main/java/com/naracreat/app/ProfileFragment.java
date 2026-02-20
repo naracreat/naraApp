@@ -10,84 +10,69 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 public class ProfileFragment extends Fragment {
 
-    public ProfileFragment() { super(R.layout.fragment_profile); }
+    public ProfileFragment() {
+        super(R.layout.fragment_profile);
+    }
+
+    private SharedPreferences sp;
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        sp = requireContext().getSharedPreferences("nara", 0);
 
-        TextView tvUser = view.findViewById(R.id.tvUser);
-        Button btnLogin = view.findViewById(R.id.btnLogin);
-        Button btnLogout = view.findViewById(R.id.btnLogout);
+        TextView tvStatus = view.findViewById(R.id.tvStatus);
+        Button btnToggle = view.findViewById(R.id.btnToggleLogin);
 
-        boolean logged = Session.isLoggedIn(requireContext());
-        tvUser.setText(logged ? ("Hi, " + Session.username(requireContext())) : "Guest");
+        RecyclerView rvHistory = view.findViewById(R.id.rvHistory);
+        RecyclerView rvFav = view.findViewById(R.id.rvFav);
 
-        btnLogin.setVisibility(logged ? View.GONE : View.VISIBLE);
-        btnLogout.setVisibility(logged ? View.VISIBLE : View.GONE);
+        rvHistory.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        rvFav.setLayoutManager(new GridLayoutManager(requireContext(), 2));
 
-        btnLogin.setOnClickListener(v -> startActivity(new Intent(requireContext(), LoginActivity.class)));
-        btnLogout.setOnClickListener(v -> {
-            Session.logout(requireContext());
-            requireActivity().recreate();
+        PostAdapter historyAdapter = new PostAdapter(new ArrayList<>(), p -> openPlayer(p));
+        PostAdapter favAdapter = new PostAdapter(new ArrayList<>(), p -> openPlayer(p));
+
+        rvHistory.setAdapter(historyAdapter);
+        rvFav.setAdapter(favAdapter);
+
+        Runnable refresh = () -> {
+            boolean logged = sp.getBoolean("logged_in", false);
+            tvStatus.setText("Status: " + (logged ? "Login" : "Guest"));
+
+            List<Post> history = HistoryStore.loadHistory(sp);
+            historyAdapter.setItems(history);
+
+            List<Post> favs = logged ? HistoryStore.loadFavs(sp) : new ArrayList<>();
+            favAdapter.setItems(favs);
+        };
+
+        btnToggle.setOnClickListener(v -> {
+            boolean logged = sp.getBoolean("logged_in", false);
+            sp.edit().putBoolean("logged_in", !logged).apply();
+            refresh.run();
         });
 
-        // History always available
-        RecyclerView rvHistory = view.findViewById(R.id.rvHistory);
-        rvHistory.setLayoutManager(new LinearLayoutManager(requireContext()));
-        SimpleTextAdapter historyAdapter = new SimpleTextAdapter();
-        rvHistory.setAdapter(historyAdapter);
-        historyAdapter.setItems(loadHistory());
-
-        // Likes & Favorites only if logged
-        RecyclerView rvLikes = view.findViewById(R.id.rvLikes);
-        RecyclerView rvFavs  = view.findViewById(R.id.rvFavs);
-
-        rvLikes.setLayoutManager(new LinearLayoutManager(requireContext()));
-        rvFavs.setLayoutManager(new LinearLayoutManager(requireContext()));
-
-        SimpleTextAdapter likesAdapter = new SimpleTextAdapter();
-        SimpleTextAdapter favsAdapter  = new SimpleTextAdapter();
-
-        rvLikes.setAdapter(likesAdapter);
-        rvFavs.setAdapter(favsAdapter);
-
-        if (logged) {
-            likesAdapter.setItems(loadSet("likes"));
-            favsAdapter.setItems(loadSet("favs"));
-        } else {
-            likesAdapter.setItems(new ArrayList<>());
-            favsAdapter.setItems(new ArrayList<>());
-        }
-
-        view.findViewById(R.id.boxLikes).setVisibility(logged ? View.VISIBLE : View.GONE);
-        view.findViewById(R.id.boxFavs).setVisibility(logged ? View.VISIBLE : View.GONE);
+        refresh.run();
     }
 
-    private List<String> loadHistory() {
-        SharedPreferences sp = requireContext().getSharedPreferences("nara_data", 0);
-        String csv = sp.getString("history_csv", "");
-        List<String> list = new ArrayList<>();
-        if (csv == null || csv.trim().isEmpty()) return list;
-        for (String x : csv.split("\\|")) {
-            if (x != null && !x.trim().isEmpty()) list.add(x.trim());
-        }
-        return list;
-    }
-
-    private List<String> loadSet(String key) {
-        SharedPreferences sp = requireContext().getSharedPreferences("nara_data", 0);
-        Set<String> set = sp.getStringSet(key, null);
-        List<String> list = new ArrayList<>();
-        if (set != null) list.addAll(set);
-        return list;
+    private void openPlayer(Post p) {
+        Intent i = new Intent(requireContext(), PlayerActivity.class);
+        i.putExtra("title", p.title);
+        i.putExtra("slug", p.slug);
+        i.putExtra("video_url", p.videoUrl);
+        i.putExtra("thumbnail_url", p.thumbnailUrl);
+        i.putExtra("views", p.views);
+        i.putExtra("created_at", p.createdAt);
+        i.putExtra("published_at", p.publishedAt);
+        i.putExtra("description", p.description);
+        startActivity(i);
     }
 }
