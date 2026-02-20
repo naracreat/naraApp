@@ -1,56 +1,37 @@
 package com.naracreat.app;
 
-import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.fragment.app.Fragment;
 
-import java.util.ArrayList;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends AppCompatActivity {
 
-    RecyclerView rv;
-    PostAdapter adapter;
-
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        rv = findViewById(R.id.rv);
-        rv.setLayoutManager(new LinearLayoutManager(this));
+        BottomNavigationView nav = findViewById(R.id.bottomNav);
 
-        adapter = new PostAdapter(new ArrayList<>(), p -> {
-            Intent i = new Intent(this, PlayerActivity.class);
-            i.putExtra("title", p.title);
-            i.putExtra("video_url", p.videoUrl);
-            i.putExtra("thumbnail_url", p.thumbnailUrl);
-            i.putExtra("views", p.views != null ? p.views : 0);
-            i.putExtra("created_at", p.createdAt != null ? p.createdAt : (p.publishedAt != null ? p.publishedAt : ""));
-            i.putExtra("description", "—"); // kalau nanti API ada description, tinggal isi
-            startActivity(i);
+        loadFragment(new HomeFragment());
+
+        nav.setOnItemSelectedListener(item -> {
+            if (item.getItemId() == R.id.nav_home) {
+                loadFragment(new HomeFragment());
+            } else {
+                loadFragment(new HomeFragment()); // sementara semua ke home
+            }
+            return true;
         });
-
-        rv.setAdapter(adapter);
-
-        loadPage(1);
     }
 
-    private void loadPage(int page) {
-        ApiClient.api().posts(page).enqueue(new Callback<PostsResponse>() {
-            @Override public void onResponse(Call<PostsResponse> call, Response<PostsResponse> resp) {
-                if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
-                    adapter.setItems(resp.body().items);
-                }
-            }
-            @Override public void onFailure(Call<PostsResponse> call, Throwable t) {}
-        });
+    private void loadFragment(Fragment f) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragmentContainer, f)
+                .commit();
     }
 }
