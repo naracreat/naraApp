@@ -1,35 +1,41 @@
 package com.naracreat.app;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.List;
 
 public class Post {
 
-    @SerializedName(value = "id", alternate = {"_id"})
-    public String id;
-
-    @SerializedName(value = "title", alternate = {"name"})
+    @SerializedName("title")
     public String title;
 
-    // thumbnail keys yang sering kepakai
-    @SerializedName(value = "thumbnailUrl", alternate = {
-            "thumbnail_url","thumbnail","thumb","poster","poster_url","image","image_url","cover","cover_url"
-    })
+    @SerializedName("slug")
+    public String slug;
+
+    @SerializedName("thumbnail_url")
     public String thumbnailUrl;
 
-    // video keys yang sering kepakai
-    @SerializedName(value = "videoUrl", alternate = {
-            "video_url","video","file","file_url","source","src","play_url","stream_url"
-    })
+    @SerializedName("video_url")
     public String videoUrl;
 
-    // time keys
-    @SerializedName(value = "createdAt", alternate = {"created_at","created"})
-    public String createdAt;
+    @SerializedName("views")
+    public Integer views;
 
-    @SerializedName(value = "publishedAt", alternate = {"published_at","published","date"})
+    @SerializedName("duration_minutes")
+    public Integer durationMinutes;
+
+    @SerializedName("published_at")
     public String publishedAt;
 
-    // views keys
-    @SerializedName(value = "views", alternate = {"view","viewCount","view_count"})
-    public Integer views;
+    @SerializedName("created_at")
+    public String createdAt;
+
+    // OPTIONAL (biar HomeFragment ga error)
+    @SerializedName("genres")
+    public List<String> genres;
+
+    @SerializedName("genre")
+    public String genre;
+
+    @SerializedName("category")
+    public String category;
 }
