@@ -6,5 +6,5 @@ import retrofit2.http.Query;
 
 public interface Api {
     @GET("/api/posts")
-    Call<PostsResponse> posts(@Query("page") int page);
+    Call<PostResponse> posts(@Query("page") int page);
 }
