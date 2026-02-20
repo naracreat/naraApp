@@ -43,7 +43,7 @@
                 android:id="@+id/tvSub"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Masuk untuk sinkron suka & favorit"
+                android:text="Masuk untuk sinkron suka &amp; favorit"
                 android:textColor="@color/subtext"
                 android:textSize="12sp" />
         </LinearLayout>
