@@ -18,8 +18,13 @@ public class ApiClient {
         return retrofit;
     }
 
-    // alias biar gak perlu ubah semua file
-    public static Retrofit api() {
-        return get();
+    // INI YANG BIKIN ApiClient.api().posts(page) BISA
+    public static Api api() {
+        return get().create(Api.class);
+    }
+
+    // Optional: kalau lo mau pakai ApiService juga
+    public static ApiService service() {
+        return get().create(ApiService.class);
     }
 }
