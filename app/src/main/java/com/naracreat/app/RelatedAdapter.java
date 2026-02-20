@@ -19,39 +19,47 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
         void onClick(Post p);
     }
 
-    private final List<Post> items;
-    private final OnClick listener;
+    private List<Post> items;
+    private final OnClick onClick;
 
-    public RelatedAdapter(List<Post> items, OnClick listener) {
+    public RelatedAdapter(List<Post> items, OnClick onClick) {
         this.items = items;
-        this.listener = listener;
+        this.onClick = onClick;
     }
 
-    @NonNull
-    @Override
+    public void setItems(List<Post> newItems) {
+        this.items = newItems;
+        notifyDataSetChanged();
+    }
+
+    @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_related, parent, false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_related, parent, false);
         return new VH(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH h, int position) {
-        Post p = items.get(position);
+    public void onBindViewHolder(@NonNull VH h, int pos) {
+        Post p = items.get(pos);
 
         h.title.setText(p.title != null ? p.title : "—");
-        h.meta.setText(p.views + " views");
 
+        String timeSrc = (p.createdAt != null && !p.createdAt.isEmpty())
+                ? p.createdAt
+                : (p.publishedAt != null ? p.publishedAt : "");
+        String meta = p.views + " • " + TimeUtil.timeAgo(timeSrc);
+        h.meta.setText(meta);
+
+        // Thumbnail dari API
         if (p.thumbnailUrl != null && !p.thumbnailUrl.isEmpty()) {
             Glide.with(h.thumb.getContext())
                     .load(p.thumbnailUrl)
-                    .centerCrop()
                     .into(h.thumb);
         } else {
             h.thumb.setImageResource(R.mipmap.ic_launcher);
         }
 
-        h.itemView.setOnClickListener(v -> listener.onClick(p));
+        h.itemView.setOnClickListener(v -> onClick.onClick(p));
     }
 
     @Override
@@ -60,11 +68,8 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
     }
 
     static class VH extends RecyclerView.ViewHolder {
-
         ImageView thumb;
-        TextView title;
-        TextView meta;
-
+        TextView title, meta;
         VH(@NonNull View itemView) {
             super(itemView);
             thumb = itemView.findViewById(R.id.imgThumb);
