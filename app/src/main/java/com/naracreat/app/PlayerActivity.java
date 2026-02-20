@@ -158,15 +158,15 @@ public class PlayerActivity extends AppCompatActivity {
         rvRelated.setAdapter(relatedAdapter);
 
         // LOAD RELATED dari API (page 1)
-        ApiClient.api().posts(1, null, null).enqueue(new Callback<PostsResponse>() {
-            @Override public void onResponse(Call<PostsResponse> call, Response<PostsResponse> resp) {
+        ApiClient.api().posts(1, null, null).enqueue(new Callback<PostResponse>() {
+            @Override public void onResponse(Call<PostResponse> call, Response<PostResponse> resp) {
                 if (!resp.isSuccessful() || resp.body() == null || resp.body().items == null) return;
 
                 List<Post> list = resp.body().items;
                 relatedAdapter.setItems(list);
             }
 
-            @Override public void onFailure(Call<PostsResponse> call, Throwable t) {
+            @Override public void onFailure(Call<PostResponse> call, Throwable t) {
                 // biarin dulu
             }
         });

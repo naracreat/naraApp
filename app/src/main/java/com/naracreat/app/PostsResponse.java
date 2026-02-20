@@ -3,7 +3,7 @@ package com.naracreat.app;
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
-public class PostsResponse {
+public class PostResponse {
 
     @SerializedName("page")
     public int page;
