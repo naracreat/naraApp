@@ -18,21 +18,28 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
 
     public interface OnClick { void onClick(Post p); }
 
-    private List<Post> items = new ArrayList<>();
+    private List<Post> items;
     private final OnClick onClick;
 
+    // ✅ Support style baru: new PostAdapter(onClick)
     public PostAdapter(OnClick onClick) {
+        this(new ArrayList<>(), onClick);
+    }
+
+    // ✅ Support style lama: new PostAdapter(list, onClick)
+    public PostAdapter(List<Post> items, OnClick onClick) {
+        this.items = (items != null) ? items : new ArrayList<>();
         this.onClick = onClick;
     }
 
     public void setItems(List<Post> items) {
-        this.items = items != null ? items : new ArrayList<>();
+        this.items = (items != null) ? items : new ArrayList<>();
         notifyDataSetChanged();
     }
 
     @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_post_16x9, parent, false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_post, parent, false);
         return new VH(v);
     }
 
@@ -42,36 +49,37 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
 
         h.title.setText(p.title != null ? p.title : "—");
 
-        String whenIso = p.timeSrc();
-        String timeAgo = TimeUtil.timeAgo(whenIso != null ? whenIso : "");
-        int views = (p.views != null) ? p.views : 0;
-        h.meta.setText(views + " views • " + timeAgo);
+        String when = (p.createdAt != null && !p.createdAt.isEmpty())
+                ? p.createdAt
+                : (p.publishedAt != null ? p.publishedAt : "");
 
-        if (p.thumbnailUrl != null && !p.thumbnailUrl.isEmpty()) {
-            Glide.with(h.thumb.getContext())
-                    .load(p.thumbnailUrl)
-                    .centerCrop()
-                    .placeholder(R.drawable.thumb_placeholder)
-                    .error(R.drawable.thumb_placeholder)
-                    .into(h.thumb);
-        } else {
-            h.thumb.setImageResource(R.drawable.thumb_placeholder);
-        }
+        String meta = (p.views != null ? p.views : 0) + " • " + TimeUtil.timeAgo(when);
+        h.meta.setText(meta);
 
-        h.itemView.setOnClickListener(v -> onClick.onClick(p));
+        String thumbUrl = p.thumbnailUrl;
+        Glide.with(h.thumb.getContext())
+                .load(thumbUrl)
+                .placeholder(R.mipmap.ic_launcher)
+                .error(R.mipmap.ic_launcher)
+                .into(h.thumb);
+
+        h.itemView.setOnClickListener(v -> {
+            if (onClick != null) onClick.onClick(p);
+        });
     }
 
     @Override
-    public int getItemCount() { return items.size(); }
+    public int getItemCount() { return items != null ? items.size() : 0; }
 
     static class VH extends RecyclerView.ViewHolder {
         ImageView thumb;
         TextView title, meta;
+
         VH(@NonNull View itemView) {
             super(itemView);
             thumb = itemView.findViewById(R.id.imgThumb);
             title = itemView.findViewById(R.id.tvTitle);
-            meta = itemView.findViewById(R.id.tvMeta);
+            meta  = itemView.findViewById(R.id.tvMeta);
         }
     }
 }

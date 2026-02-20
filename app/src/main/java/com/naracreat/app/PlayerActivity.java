@@ -180,7 +180,7 @@ public class PlayerActivity extends AppCompatActivity {
         });
         rvRelated.setAdapter(related);
 
-        ApiClient.get().create(ApiService.class).getPosts(1).enqueue(new retrofit2.Callback<PostResponse>() {
+        ApiClient.api().getPosts(1).enqueue(new retrofit2.Callback<PostResponse>() {
             @Override public void onResponse(retrofit2.Call<PostResponse> call, retrofit2.Response<PostResponse> resp) {
                 if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
                     java.util.ArrayList<Post> list = new java.util.ArrayList<>();
