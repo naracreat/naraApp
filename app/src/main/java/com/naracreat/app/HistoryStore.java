@@ -1,5 +1,6 @@
 package com.naracreat.app;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.google.gson.Gson;
@@ -7,66 +8,53 @@ import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 public class HistoryStore {
 
-    private static final Gson gson = new Gson();
-    private static final Type LIST_TYPE = new TypeToken<List<Post>>(){}.getType();
+    private static final String PREF = "nara_store";
+    private static final String KEY_HISTORY = "history_posts";
+    private static final int MAX = 50;
 
-    public static void pushHistory(SharedPreferences sp, Post p) {
-        if (p == null || p.slug == null) return;
+    public static void add(Context c, Post p) {
+        if (c == null || p == null) return;
+        List<Post> list = load(c);
 
-        List<Post> cur = loadHistory(sp);
-
-        // unique by slug, newest first
-        Map<String, Post> map = new LinkedHashMap<>();
-        map.put(p.slug, p);
-        for (Post x : cur) {
-            if (x != null && x.slug != null && !x.slug.equals(p.slug)) map.put(x.slug, x);
+        // hapus duplikat (by slug / videoUrl)
+        Iterator<Post> it = list.iterator();
+        while (it.hasNext()) {
+            Post x = it.next();
+            if (x == null) continue;
+            if (eq(x.slug, p.slug) || eq(x.videoUrl, p.videoUrl)) {
+                it.remove();
+                break;
+            }
         }
-
-        List<Post> out = new ArrayList<>(map.values());
-        if (out.size() > 50) out = out.subList(0, 50);
-
-        sp.edit().putString("history_json", gson.toJson(out)).apply();
+        list.add(0, p);
+        if (list.size() > MAX) list = list.subList(0, MAX);
+        save(c, list);
     }
 
-    public static List<Post> loadHistory(SharedPreferences sp) {
-        String s = sp.getString("history_json", "[]");
+    public static List<Post> load(Context c) {
         try {
-            List<Post> list = gson.fromJson(s, LIST_TYPE);
+            SharedPreferences sp = c.getSharedPreferences(PREF, Context.MODE_PRIVATE);
+            String json = sp.getString(KEY_HISTORY, "[]");
+            Type t = new TypeToken<List<Post>>(){}.getType();
+            List<Post> list = new Gson().fromJson(json, t);
             return list != null ? list : new ArrayList<>();
         } catch (Exception e) {
             return new ArrayList<>();
         }
     }
 
-    public static void setFav(SharedPreferences sp, Post p, boolean on) {
-        if (p == null || p.slug == null) return;
-        List<Post> cur = loadFavs(sp);
-
-        Map<String, Post> map = new LinkedHashMap<>();
-        if (on) map.put(p.slug, p);
-        for (Post x : cur) {
-            if (x != null && x.slug != null && !x.slug.equals(p.slug)) map.put(x.slug, x);
-        }
-
-        List<Post> out = new ArrayList<>(map.values());
-        if (out.size() > 200) out = out.subList(0, 200);
-
-        sp.edit().putString("fav_json", gson.toJson(out)).apply();
+    private static void save(Context c, List<Post> list) {
+        SharedPreferences sp = c.getSharedPreferences(PREF, Context.MODE_PRIVATE);
+        sp.edit().putString(KEY_HISTORY, new Gson().toJson(list)).apply();
     }
 
-    public static List<Post> loadFavs(SharedPreferences sp) {
-        String s = sp.getString("fav_json", "[]");
-        try {
-            List<Post> list = gson.fromJson(s, LIST_TYPE);
-            return list != null ? list : new ArrayList<>();
-        } catch (Exception e) {
-            return new ArrayList<>();
-        }
+    private static boolean eq(String a, String b) {
+        if (a == null || b == null) return false;
+        return a.equals(b);
     }
 }

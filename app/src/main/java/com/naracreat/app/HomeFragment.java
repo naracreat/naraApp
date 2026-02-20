@@ -2,78 +2,77 @@ package com.naracreat.app;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import retrofit2.Call;
-import retrofit2.Callback;
 import retrofit2.Response;
 
 public class HomeFragment extends Fragment {
 
-    public HomeFragment() {
-        super(R.layout.fragment_home);
-    }
-
-    private SwipeRefreshLayout swipe;
+    private RecyclerView rv;
     private PostAdapter adapter;
 
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        swipe = view.findViewById(R.id.swipe);
+    @Nullable @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View v = inflater.inflate(R.layout.fragment_home, container, false);
 
-        RecyclerView rv = view.findViewById(R.id.recycler);
-        rv.setLayoutManager(new LinearLayoutManager(requireContext()));
-
-        adapter = new PostAdapter(new ArrayList<>(), p -> {
-            Intent i = new Intent(requireContext(), PlayerActivity.class);
-            i.putExtra("title", p.title);
-            i.putExtra("slug", p.slug);
-            i.putExtra("video_url", p.videoUrl);
-            i.putExtra("thumbnail_url", p.thumbnailUrl);
-            i.putExtra("views", p.views);
-            i.putExtra("created_at", p.createdAt);
-            i.putExtra("published_at", p.publishedAt);
-            i.putExtra("description", p.description);
-            startActivity(i);
-        });
+        rv = v.findViewById(R.id.rvPosts);
+        rv.setLayoutManager(new LinearLayoutManager(getContext()));
+        adapter = new PostAdapter(new ArrayList<>(), this::openPlayer);
         rv.setAdapter(adapter);
 
-        swipe.setOnRefreshListener(() -> loadPosts(true));
+        loadPage(1);
 
-        loadPosts(false);
+        return v;
     }
 
-    private void loadPosts(boolean fromPull) {
-        if (!fromPull) swipe.setRefreshing(true);
+    private void loadPage(int page) {
+        if (getContext() == null) return;
 
-        ApiClient.api()
-                .getPosts(1)
-                .enqueue(new Callback<PostResponse>() {
-                    @Override
-                    public void onResponse(Call<PostResponse> call, Response<PostResponse> resp) {
-                        swipe.setRefreshing(false);
-                        if (!resp.isSuccessful() || resp.body() == null || resp.body().items == null) {
-                            Toast.makeText(requireContext(), "Gagal load", Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        adapter.setItems(resp.body().items);
-                    }
+        if (!NetworkUtil.isOnline(getContext())) {
+            Toast.makeText(getContext(), "Offline / Error", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-                    @Override
-                    public void onFailure(Call<PostResponse> call, Throwable t) {
-                        swipe.setRefreshing(false);
-                        Toast.makeText(requireContext(), "Offline / Error", Toast.LENGTH_SHORT).show();
-                    }
-                });
+        ApiClient.api().getPosts(page).enqueue(new retrofit2.Callback<PostResponse>() {
+            @Override
+            public void onResponse(@NonNull Call<PostResponse> call, @NonNull Response<PostResponse> response) {
+                if (!response.isSuccessful() || response.body() == null || response.body().items == null) {
+                    Toast.makeText(getContext(), "Offline / Error", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                adapter.setItems(response.body().items);
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<PostResponse> call, @NonNull Throwable t) {
+                Toast.makeText(getContext(), "Offline / Error", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void openPlayer(Post p) {
+        if (getContext() == null || p == null) return;
+        Intent i = new Intent(getContext(), PlayerActivity.class);
+        i.putExtra("title", p.title);
+        i.putExtra("video_url", p.videoUrl);
+        i.putExtra("thumbnail_url", p.thumbnailUrl);
+        i.putExtra("views", p.views != null ? p.views : 0);
+        i.putExtra("created_at", p.createdAt != null ? p.createdAt : (p.publishedAt != null ? p.publishedAt : ""));
+        i.putExtra("description", p.description != null ? p.description : "");
+        startActivity(i);
     }
 }

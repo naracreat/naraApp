@@ -14,45 +14,32 @@ import com.bumptech.glide.Glide;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
+public class ProfileGridAdapter extends RecyclerView.Adapter<ProfileGridAdapter.VH> {
 
     public interface OnClick { void onClick(Post p); }
 
     private List<Post> items = new ArrayList<>();
     private final OnClick onClick;
 
-    // kompatibel: bisa dipanggil new PostAdapter(new ArrayList<>(), ...)
-    public PostAdapter(List<Post> items, OnClick onClick) {
-        this.items = (items != null) ? items : new ArrayList<>();
+    public ProfileGridAdapter(OnClick onClick) {
         this.onClick = onClick;
     }
 
-    // ekstra: bisa juga new PostAdapter(onClick)
-    public PostAdapter(OnClick onClick) {
-        this.items = new ArrayList<>();
-        this.onClick = onClick;
-    }
-
-    public void setItems(List<Post> items) {
-        this.items = (items != null) ? items : new ArrayList<>();
+    public void setItems(List<Post> list) {
+        items = (list != null) ? list : new ArrayList<>();
         notifyDataSetChanged();
     }
 
     @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_post, parent, false);
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_video_grid, parent, false);
         return new VH(v);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull VH h, int pos) {
-        Post p = items.get(pos);
+    public void onBindViewHolder(@NonNull VH h, int position) {
+        Post p = items.get(position);
         h.title.setText(p.title != null ? p.title : "—");
-
-        String when = p.timeSrc();
-        int views = (p.views != null) ? p.views : 0;
-        h.meta.setText(views + " • " + TimeUtil.timeAgo(when));
-
         Glide.with(h.thumb.getContext())
                 .load(p.thumbnailUrl)
                 .placeholder(R.drawable.ph_16x9)
@@ -65,16 +52,15 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.VH> {
         });
     }
 
-    @Override public int getItemCount() { return items != null ? items.size() : 0; }
+    @Override public int getItemCount() { return items.size(); }
 
     static class VH extends RecyclerView.ViewHolder {
         ImageView thumb;
-        TextView title, meta;
+        TextView title;
         VH(@NonNull View itemView) {
             super(itemView);
             thumb = itemView.findViewById(R.id.imgThumb);
             title = itemView.findViewById(R.id.tvTitle);
-            meta = itemView.findViewById(R.id.tvMeta);
         }
     }
 }

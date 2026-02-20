@@ -14,22 +14,21 @@ public class Post {
 
     public Integer views;
 
-    @SerializedName("duration_minutes")
-    public Integer durationMinutes;
-
     @SerializedName("published_at")
     public String publishedAt;
 
     @SerializedName("created_at")
     public String createdAt;
 
-    // Optional (biar ga error kalau dipakai)
+    @SerializedName("duration_minutes")
+    public Integer durationMinutes;
+
+    // optional kalau nanti ada
     public String description;
 
-    // ✅ helper buat adapter
     public String timeSrc() {
-        if (createdAt != null && !createdAt.isEmpty()) return createdAt;
-        if (publishedAt != null && !publishedAt.isEmpty()) return publishedAt;
-        return "";
+        if (createdAt != null && createdAt.trim().length() > 0) return createdAt;
+        if (publishedAt != null && publishedAt.trim().length() > 0) return publishedAt;
+        return null;
     }
 }
