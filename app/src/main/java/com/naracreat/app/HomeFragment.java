@@ -2,17 +2,18 @@ package com.naracreat.app;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -21,7 +22,8 @@ import retrofit2.Response;
 
 public class HomeFragment extends Fragment {
 
-    private RecyclerView rv;
+    private SwipeRefreshLayout swipe;
+    private RecyclerView recycler;
     private PostAdapter adapter;
 
     @Nullable
@@ -32,76 +34,42 @@ public class HomeFragment extends Fragment {
 
         View v = inflater.inflate(R.layout.fragment_home, container, false);
 
-        rv = findRecycler(v);
-        if (rv == null) {
-            Toast.makeText(getContext(), "Layout error: RecyclerView tidak ketemu", Toast.LENGTH_SHORT).show();
-            return v;
-        }
+        swipe = v.findViewById(R.id.swipe);
+        recycler = v.findViewById(R.id.recycler);
 
-        rv.setLayoutManager(new LinearLayoutManager(getContext()));
-
+        recycler.setLayoutManager(new LinearLayoutManager(getContext()));
         adapter = new PostAdapter(new ArrayList<>(), this::openPlayer);
-        rv.setAdapter(adapter);
+        recycler.setAdapter(adapter);
 
-        loadPage(1);
+        swipe.setOnRefreshListener(() -> loadPage(1, true));
+
+        // first load
+        swipe.setRefreshing(true);
+        loadPage(1, false);
 
         return v;
     }
 
-    // Cari recycler dengan beberapa id yang mungkin dipakai
-    private RecyclerView findRecycler(View root) {
-        int[] ids = new int[] {
-                R.id.rvPosts,
-                R.id.rv_post,
-                R.id.rv_posts,
-                R.id.recyclerPosts,
-                R.id.recycler_posts,
-                R.id.recycler,
-                R.id.rv
-        };
-
-        for (int id : ids) {
-            try {
-                View v = root.findViewById(id);
-                if (v instanceof RecyclerView) return (RecyclerView) v;
-            } catch (Exception ignored) {}
-        }
-
-        // fallback: cari pertama RecyclerView yang ada di layout
-        if (root instanceof ViewGroup) {
-            RecyclerView found = deepFindRecycler((ViewGroup) root);
-            if (found != null) return found;
-        }
-        return null;
-    }
-
-    private RecyclerView deepFindRecycler(ViewGroup vg) {
-        for (int i = 0; i < vg.getChildCount(); i++) {
-            View c = vg.getChildAt(i);
-            if (c instanceof RecyclerView) return (RecyclerView) c;
-            if (c instanceof ViewGroup) {
-                RecyclerView r = deepFindRecycler((ViewGroup) c);
-                if (r != null) return r;
-            }
-        }
-        return null;
-    }
-
-    private void loadPage(int page) {
+    private void loadPage(int page, boolean fromPull) {
         ApiClient.api().getPosts(page).enqueue(new retrofit2.Callback<PostResponse>() {
             @Override
             public void onResponse(@NonNull Call<PostResponse> call,
                                    @NonNull Response<PostResponse> response) {
 
-                if (response.body() != null && response.body().items != null) {
-                    adapter.setItems(response.body().items);
+                swipe.setRefreshing(false);
+
+                PostResponse body = response.body();
+                if (body != null && body.items != null) {
+                    adapter.setItems(body.items);
+                    if (fromPull) Toast.makeText(getContext(), "Berhasil refresh", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(getContext(), "Error load data", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), "Gagal load data", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<PostResponse> call, @NonNull Throwable t) {
+                swipe.setRefreshing(false);
                 Toast.makeText(getContext(), "Offline / Error", Toast.LENGTH_SHORT).show();
             }
         });
