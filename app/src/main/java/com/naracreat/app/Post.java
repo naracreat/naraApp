@@ -1,28 +1,35 @@
 package com.naracreat.app;
 
 import com.google.gson.annotations.SerializedName;
-import java.util.List;
 
 public class Post {
+
+    @SerializedName(value = "id", alternate = {"_id"})
+    public String id;
+
+    @SerializedName(value = "title", alternate = {"name"})
     public String title;
 
-    @SerializedName("videoUrl")
-    public String videoUrl;
-
-    @SerializedName("thumbnailUrl")
+    // thumbnail keys yang sering kepakai
+    @SerializedName(value = "thumbnailUrl", alternate = {
+            "thumbnail_url","thumbnail","thumb","poster","poster_url","image","image_url","cover","cover_url"
+    })
     public String thumbnailUrl;
 
-    // view bisa int atau Integer dari API
-    public Integer views;
+    // video keys yang sering kepakai
+    @SerializedName(value = "videoUrl", alternate = {
+            "video_url","video","file","file_url","source","src","play_url","stream_url"
+    })
+    public String videoUrl;
 
-    @SerializedName("createdAt")
+    // time keys
+    @SerializedName(value = "createdAt", alternate = {"created_at","created"})
     public String createdAt;
 
-    @SerializedName("publishedAt")
+    @SerializedName(value = "publishedAt", alternate = {"published_at","published","date"})
     public String publishedAt;
 
-    // Genre bisa 1 string, atau list string (tergantung API kamu)
-    public String genre;
-    public String category;
-    public List<String> genres;
+    // views keys
+    @SerializedName(value = "views", alternate = {"view","viewCount","view_count"})
+    public Integer views;
 }

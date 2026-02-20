@@ -8,7 +8,6 @@ import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -22,7 +21,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -31,15 +29,12 @@ import retrofit2.Response;
 public class PlayerActivity extends AppCompatActivity {
 
     private ExoPlayer player;
-    private RelatedAdapter relatedAdapter;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // PAKSA PORTRAIT
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
         setContentView(R.layout.activity_player);
 
         PlayerView playerView = findViewById(R.id.playerView);
@@ -62,43 +57,48 @@ public class PlayerActivity extends AppCompatActivity {
 
         // DATA DARI INTENT
         String title = getIntent().getStringExtra("title");
-        String videoUrl = getIntent().getStringExtra("video_url");
+        String videoUrlRaw = getIntent().getStringExtra("video_url");
+        String thumbRaw = getIntent().getStringExtra("thumbnail_url");
         String createdAt = getIntent().getStringExtra("created_at");
         int views = getIntent().getIntExtra("views", 0);
         String desc = getIntent().getStringExtra("description");
+
+        // absolutin URL
+        String videoUrl = UrlUtil.abs(videoUrlRaw);
+        String thumbUrl = UrlUtil.abs(thumbRaw);
 
         tvTitle.setText(title != null ? title : "—");
         tvViews.setText(String.valueOf(views));
         tvTimeAgo.setText(TimeUtil.timeAgo(createdAt != null ? createdAt : ""));
         tvDesc.setText(desc != null ? desc : "—");
 
-        // Channel row
-        imgChannel.setImageResource(R.mipmap.ic_launcher);
         tvChannelName.setText("ItsNara");
         tvChannelMeta.setText("ADMIN");
 
-        // Title toggle desc
+        // toggle desc
         tvTitle.setOnClickListener(v -> {
-            tvDesc.setVisibility(tvDesc.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+            tvDesc.setVisibility(tvDesc.getVisibility() == android.view.View.VISIBLE
+                    ? android.view.View.GONE : android.view.View.VISIBLE);
         });
 
-        // Sawer in-app (SawerActivity harus bener buka WebView ke saweria)
         btnSawer.setOnClickListener(v -> startActivity(new Intent(this, SawerActivity.class)));
 
         // PLAYER
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
+
         if (videoUrl != null && !videoUrl.isEmpty()) {
-            player.setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)));
-            player.prepare();
-            player.play();
+            try {
+                player.setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)));
+                player.prepare();
+                player.play();
+            } catch (Exception ignored) { }
         }
 
         // LIKE / FAV (local)
         SharedPreferences sp = getSharedPreferences("nara", MODE_PRIVATE);
-        String safeKey = (title != null ? title : "").replaceAll("\\s+", "_");
-        String keyLike = "like_" + safeKey;
-        String keyFav = "fav_" + safeKey;
+        String keyLike = "like_" + (title != null ? title : "");
+        String keyFav = "fav_" + (title != null ? title : "");
 
         updateToggleText(btnLike, "Suka", sp.getBoolean(keyLike, false));
         updateToggleText(btnFav, "Favorit", sp.getBoolean(keyFav, false));
@@ -120,67 +120,60 @@ public class PlayerActivity extends AppCompatActivity {
             if (videoUrl == null || videoUrl.isEmpty()) return;
 
             DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
-            if (dm == null) return;
-
             DownloadManager.Request r = new DownloadManager.Request(Uri.parse(videoUrl));
             r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-
-            String fileName = "NaraApp_" + System.currentTimeMillis() + guessExt(videoUrl);
-            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);
-
+            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
+                    "NaraApp_" + System.currentTimeMillis() + ".mp4");
             dm.enqueue(r);
         });
 
-        // SHARE
+        // SHARE (pakai link aplikasi kamu + fallback)
         btnShare.setOnClickListener(v -> {
-            if (videoUrl == null || videoUrl.isEmpty()) return;
+            String appLink = "https://narahentai.pages.dev/?title=" + Uri.encode(title != null ? title : "video");
+            String shareText = (title != null ? title : "Video") + "\n" + appLink;
+
+            // kalau kamu juga mau include direct video URL, uncomment:
+            // if (videoUrl != null && !videoUrl.isEmpty()) shareText += "\n" + videoUrl;
+
             Intent share = new Intent(Intent.ACTION_SEND);
             share.setType("text/plain");
-            share.putExtra(Intent.EXTRA_TEXT, (title != null ? title : "Video") + "\n" + videoUrl);
+            share.putExtra(Intent.EXTRA_TEXT, shareText);
             startActivity(Intent.createChooser(share, "Bagikan"));
         });
 
-        // RELATED ADAPTER
-        relatedAdapter = new RelatedAdapter(new ArrayList<>(), p -> {
+        // RELATED
+        RelatedAdapter relatedAdapter = new RelatedAdapter(new ArrayList<>(), p -> {
             Intent i = new Intent(this, PlayerActivity.class);
             i.putExtra("title", p.title);
             i.putExtra("video_url", p.videoUrl);
             i.putExtra("thumbnail_url", p.thumbnailUrl);
-            i.putExtra("views", p.views); // views int, aman
-            String t = (p.createdAt != null && !p.createdAt.isEmpty())
+            i.putExtra("views", p.views != null ? p.views : 0);
+
+            String when = (p.createdAt != null && !p.createdAt.isEmpty())
                     ? p.createdAt
                     : (p.publishedAt != null ? p.publishedAt : "");
-            i.putExtra("created_at", t);
+            i.putExtra("created_at", when);
+
             i.putExtra("description", "—");
             startActivity(i);
             finish();
         });
         rvRelated.setAdapter(relatedAdapter);
 
-        // LOAD RELATED dari API (page 1)
+        // ambil related page 1
         ApiClient.api().posts(1, null, null).enqueue(new Callback<PostResponse>() {
-            @Override public void onResponse(Call<PostResponse> call, Response<PostResponse> resp) {
-                if (!resp.isSuccessful() || resp.body() == null || resp.body().items == null) return;
-
-                List<Post> list = resp.body().items;
-                relatedAdapter.setItems(list);
+            @Override
+            public void onResponse(Call<PostResponse> call, Response<PostResponse> resp) {
+                if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
+                    relatedAdapter.setItems(resp.body().items);
+                }
             }
-
-            @Override public void onFailure(Call<PostResponse> call, Throwable t) {
-                // biarin dulu
-            }
+            @Override public void onFailure(Call<PostResponse> call, Throwable t) { }
         });
     }
 
     private void updateToggleText(TextView tv, String label, boolean active) {
         tv.setText(active ? (label + " (ON)") : label);
-    }
-
-    private String guessExt(String url) {
-        String u = url.toLowerCase();
-        if (u.contains(".m3u8")) return ".m3u8";
-        if (u.contains(".mp4")) return ".mp4";
-        return ".mp4";
     }
 
     @Override

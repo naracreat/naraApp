@@ -2,6 +2,7 @@ package com.naracreat.app;
 
 public class UrlUtil {
 
+    // Samain dengan BASE_URL retrofit kamu
     public static final String BASE = "https://narahentai.pages.dev/";
 
     public static String abs(String url) {
@@ -9,12 +10,17 @@ public class UrlUtil {
         url = url.trim();
         if (url.isEmpty()) return null;
 
-        if (url.startsWith("http://") || url.startsWith("https://"))
-            return url;
+        // already absolute
+        if (url.startsWith("http://") || url.startsWith("https://")) return url;
 
-        if (url.startsWith("/"))
-            url = url.substring(1);
+        // protocol-relative
+        if (url.startsWith("//")) return "https:" + url;
 
-        return BASE + url;
+        // ensure base ends with /
+        String base = BASE.endsWith("/") ? BASE : (BASE + "/");
+
+        // relative path
+        if (url.startsWith("/")) return base + url.substring(1);
+        return base + url;
     }
 }

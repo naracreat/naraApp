@@ -10,7 +10,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
 
 import java.util.List;
 
@@ -31,8 +30,7 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
         notifyDataSetChanged();
     }
 
-    @NonNull
-    @Override
+    @NonNull @Override
     public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_related, parent, false);
         return new VH(v);
@@ -44,31 +42,24 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
 
         h.title.setText(p.title != null ? p.title : "—");
 
-        String timeSrc = (p.createdAt != null && !p.createdAt.isEmpty())
+        String when = (p.createdAt != null && !p.createdAt.isEmpty())
                 ? p.createdAt
                 : (p.publishedAt != null ? p.publishedAt : "");
 
-        int views = (p.views != null ? p.views : 0);
-        String meta = views + " • " + TimeUtil.timeAgo(timeSrc);
-        h.meta.setText(meta);
+        int views = (p.views != null) ? p.views : 0;
+        h.meta.setText(views + " • " + TimeUtil.timeAgo(when));
 
-        // FIX: thumbnail url sering relatif, jadi harus dibuat absolute
         String thumbUrl = UrlUtil.abs(p.thumbnailUrl);
-
         Glide.with(h.thumb.getContext())
                 .load(thumbUrl)
                 .placeholder(R.mipmap.ic_launcher)
                 .error(R.mipmap.ic_launcher)
-                // biar gak "ketuker" / nyangkut cache pas debugging
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .skipMemoryCache(true)
                 .into(h.thumb);
 
         h.itemView.setOnClickListener(v -> onClick.onClick(p));
     }
 
-    @Override
-    public int getItemCount() {
+    @Override public int getItemCount() {
         return items != null ? items.size() : 0;
     }
 

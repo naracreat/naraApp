@@ -4,7 +4,6 @@ import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
 public class PostResponse {
-
     public int page;
 
     @SerializedName("totalPages")
