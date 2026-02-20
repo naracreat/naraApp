@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@android:drawable/ic_menu_view"
+        android:title="Beranda" />
+
+    <item
+        android:id="@+id/nav_search"
+        android:icon="@android:drawable/ic_menu_search"
+        android:title="Cari" />
+
+    <item
+        android:id="@+id/nav_premium"
+        android:icon="@android:drawable/btn_star_big_on"
+        android:title="Premium" />
+
+    <item
+        android:id="@+id/nav_schedule"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Jadwal" />
+
+    <item
+        android:id="@+id/nav_me"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:title="Saya" />
+
+</menu>
