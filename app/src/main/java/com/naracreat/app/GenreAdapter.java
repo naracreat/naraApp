@@ -16,15 +16,15 @@ public class GenreAdapter extends RecyclerView.Adapter<GenreAdapter.VH> {
 
     private final List<String> items;
     private final OnClick onClick;
-    private String selected = "Semua";
+    private String active = "Semua";
 
     public GenreAdapter(List<String> items, OnClick onClick) {
         this.items = items;
         this.onClick = onClick;
     }
 
-    public void setSelected(String g) {
-        selected = g;
+    public void setActive(String g) {
+        active = (g == null || g.isEmpty()) ? "Semua" : g;
         notifyDataSetChanged();
     }
 
@@ -37,20 +37,24 @@ public class GenreAdapter extends RecyclerView.Adapter<GenreAdapter.VH> {
     @Override
     public void onBindViewHolder(@NonNull VH h, int pos) {
         String g = items.get(pos);
-        h.txt.setText(g);
-        boolean active = g.equals(selected);
-        h.txt.setSelected(active);
+        h.tv.setText(g);
+
+        boolean isActive = g.equalsIgnoreCase(active);
+        h.tv.setBackgroundResource(isActive ? R.drawable.bg_chip_active : R.drawable.bg_chip);
+
         h.itemView.setOnClickListener(v -> onClick.onClick(g));
     }
 
     @Override
-    public int getItemCount() { return items.size(); }
+    public int getItemCount() {
+        return items.size();
+    }
 
     static class VH extends RecyclerView.ViewHolder {
-        TextView txt;
+        TextView tv;
         VH(@NonNull View itemView) {
             super(itemView);
-            txt = itemView.findViewById(R.id.tvChip);
+            tv = itemView.findViewById(R.id.tvChip);
         }
     }
 }
