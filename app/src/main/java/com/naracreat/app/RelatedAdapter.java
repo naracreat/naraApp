@@ -11,22 +11,23 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
 
     public interface OnClick { void onClick(Post p); }
 
-    private List<Post> items;
+    private List<Post> items = new ArrayList<>();
     private final OnClick onClick;
 
     public RelatedAdapter(List<Post> items, OnClick onClick) {
-        this.items = items;
+        setItems(items);
         this.onClick = onClick;
     }
 
     public void setItems(List<Post> newItems) {
-        this.items = newItems;
+        this.items = newItems != null ? newItems : new ArrayList<>();
         notifyDataSetChanged();
     }
 
@@ -41,32 +42,28 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
         Post p = items.get(pos);
 
         h.title.setText(p.title != null ? p.title : "—");
-
-        String when = (p.createdAt != null && !p.createdAt.isEmpty())
-                ? p.createdAt
-                : (p.publishedAt != null ? p.publishedAt : "");
-
         int views = (p.views != null) ? p.views : 0;
-        h.meta.setText(views + " • " + TimeUtil.timeAgo(when));
+        h.meta.setText(views + " views • " + TimeUtil.timeAgo(p.timeSrc() != null ? p.timeSrc() : ""));
 
-        String thumbUrl = UrlUtil.abs(p.thumbnailUrl);
-        Glide.with(h.thumb.getContext())
-                .load(thumbUrl)
-                .placeholder(R.mipmap.ic_launcher)
-                .error(R.mipmap.ic_launcher)
-                .into(h.thumb);
+        if (p.thumbnailUrl != null && !p.thumbnailUrl.isEmpty()) {
+            Glide.with(h.thumb.getContext())
+                    .load(p.thumbnailUrl)
+                    .centerCrop()
+                    .placeholder(R.drawable.thumb_placeholder)
+                    .error(R.drawable.thumb_placeholder)
+                    .into(h.thumb);
+        } else {
+            h.thumb.setImageResource(R.drawable.thumb_placeholder);
+        }
 
         h.itemView.setOnClickListener(v -> onClick.onClick(p));
     }
 
-    @Override public int getItemCount() {
-        return items != null ? items.size() : 0;
-    }
+    @Override public int getItemCount() { return items.size(); }
 
     static class VH extends RecyclerView.ViewHolder {
         ImageView thumb;
         TextView title, meta;
-
         VH(@NonNull View itemView) {
             super(itemView);
             thumb = itemView.findViewById(R.id.imgThumb);

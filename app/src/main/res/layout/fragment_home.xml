@@ -1,47 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/bg">
+    android:background="@color/bg"
+    android:orientation="vertical">
 
-    <!-- Search -->
-    <com.google.android.material.textfield.TextInputLayout
+    <TextView
+        android:id="@+id/tvHomeTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp"
-        app:boxBackgroundMode="outline"
-        app:boxCornerRadiusTopStart="28dp"
-        app:boxCornerRadiusTopEnd="28dp"
-        app:boxCornerRadiusBottomStart="28dp"
-        app:boxCornerRadiusBottomEnd="28dp">
+        android:text="NaraApp"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:textColor="@color/text"
+        android:padding="14dp"/>
 
-        <com.google.android.material.textfield.TextInputEditText
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="14dp"
+        android:paddingBottom="10dp">
+
+        <EditText
             android:id="@+id/etSearch"
             android:layout_width="match_parent"
             android:layout_height="44dp"
             android:hint="Cari Judul"
-            android:singleLine="true"
-            android:imeOptions="actionSearch"/>
-    </com.google.android.material.textfield.TextInputLayout>
+            android:textColor="@color/text"
+            android:textColorHint="@color/subtext"
+            android:background="@drawable/bg_search"
+            android:paddingHorizontal="14dp"
+            android:singleLine="true" />
+    </LinearLayout>
 
-    <!-- Genre row -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvGenres"
         android:layout_width="match_parent"
         android:layout_height="44dp"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:clipToPadding="false"
         android:overScrollMode="never"/>
 
-    <!-- Feed -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvFeed"
+        android:id="@+id/rvPosts"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="10dp"
-        android:clipToPadding="false"/>
-
+        android:paddingTop="6dp"
+        android:paddingBottom="88dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"/>
 </LinearLayout>

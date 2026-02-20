@@ -47,7 +47,7 @@
                     android:id="@+id/tvViews"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="0"
+                    android:text="0 views"
                     android:textColor="@color/subtext"
                     android:textSize="13sp" />
 
@@ -71,7 +71,7 @@
                 android:id="@+id/tvDescription"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="—"
+                android:text=""
                 android:textColor="@color/subtext"
                 android:textSize="14sp"
                 android:visibility="gone"

@@ -1,22 +1,25 @@
 package com.naracreat.app;
 
 import android.os.Bundle;
-import android.widget.TextView;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class PremiumActivity extends AppCompatActivity {
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_web);
 
-        TextView tv = new TextView(this);
-        tv.setText("Premium (tanpa iklan) - coming soon\n\nDi sini nanti bisa integrasi payment.");
-        tv.setTextColor(getResources().getColor(R.color.text));
-        tv.setTextSize(18f);
-        tv.setPadding(30, 30, 30, 30);
-        tv.setBackgroundColor(getResources().getColor(R.color.bg));
-        setContentView(tv);
+        WebView wv = findViewById(R.id.webView);
+        WebSettings s = wv.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+
+        // placeholder page
+        wv.loadUrl("https://narahentai.pages.dev/");
     }
 }

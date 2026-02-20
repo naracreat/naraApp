@@ -7,10 +7,10 @@
 
     <ImageView
         android:id="@+id/imgThumb"
-        android:layout_width="120dp"
-        android:layout_height="70dp"
+        android:layout_width="140dp"
+        android:layout_height="80dp"
         android:scaleType="centerCrop"
-        android:src="@mipmap/ic_launcher" />
+        android:background="@color/card"/>
 
     <LinearLayout
         android:layout_width="0dp"
@@ -23,19 +23,19 @@
             android:id="@+id/tvTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="Judul"
             android:textColor="@color/text"
             android:textStyle="bold"
             android:maxLines="2"
-            android:ellipsize="end"
-            android:text="Title" />
+            android:ellipsize="end"/>
 
         <TextView
             android:id="@+id/tvMeta"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="0 views • —"
             android:textColor="@color/subtext"
             android:textSize="13sp"
-            android:paddingTop="6dp"
-            android:text="views • time" />
+            android:layout_marginTop="6dp"/>
     </LinearLayout>
 </LinearLayout>

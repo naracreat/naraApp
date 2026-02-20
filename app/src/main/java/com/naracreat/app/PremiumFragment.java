@@ -1,10 +1,9 @@
 package com.naracreat.app;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,13 +11,11 @@ import androidx.fragment.app.Fragment;
 
 public class PremiumFragment extends Fragment {
 
-    @Nullable @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_simple, container, false);
-    }
+    public PremiumFragment() { super(R.layout.fragment_premium); }
 
     @Override
-    public void onViewCreated(@NonNull View v, @Nullable Bundle savedInstanceState) {
-        ((TextView) v.findViewById(R.id.tvTitle)).setText("Premium");
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        Button btn = view.findViewById(R.id.btnOpenPremium);
+        btn.setOnClickListener(v -> startActivity(new Intent(requireContext(), PremiumActivity.class)));
     }
 }
