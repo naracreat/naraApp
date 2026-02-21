@@ -39,7 +39,7 @@ public class PlayerActivity extends AppCompatActivity {
     private TextView tvTitle, tvMeta, tvDesc, tvChannelName, tvChannelRole;
     private ImageView imgChannel, btnFullscreen;
 
-    private View btnSawer, btnShare, btnDownload, btnLike, btnDislike, btnFav;
+    private View btnSawer, btnShare, btnDownload, btnLike, btnFav;
 
     private RecyclerView rvRelated;
     private RelatedAdapter relatedAdapter;
@@ -50,7 +50,6 @@ public class PlayerActivity extends AppCompatActivity {
     private boolean descOpen = false;
     private boolean isFullscreen = false;
 
-    // Link aplikasi kamu (buat share). Ubah sesuai domain/link kamu.
     private static final String APP_LINK_BASE = "https://narahentai.pages.dev/app/";
     private static final String SAWERIA_URL = "https://saweria.co/Narapoi";
 
@@ -84,7 +83,6 @@ public class PlayerActivity extends AppCompatActivity {
         btnShare = findViewById(R.id.btnShare);
         btnDownload = findViewById(R.id.btnDownload);
         btnLike = findViewById(R.id.btnLike);
-        btnDislike = findViewById(R.id.btnDislike);
         btnFav = findViewById(R.id.btnFav);
 
         rvRelated = findViewById(R.id.rvRelated);
@@ -100,14 +98,22 @@ public class PlayerActivity extends AppCompatActivity {
         current.title = i.getStringExtra("title");
         current.videoUrl = i.getStringExtra("video_url");
         current.thumbnailUrl = i.getStringExtra("thumbnail_url");
-        current.views = i.hasExtra("views") ? i.getIntExtra("views", 0) : 0;
+        current.slug = i.getStringExtra("slug");
         current.createdAt = i.getStringExtra("created_at");
         current.publishedAt = i.getStringExtra("published_at");
-        current.slug = i.getStringExtra("slug");
         current.durationMinutes = i.hasExtra("duration_minutes") ? i.getIntExtra("duration_minutes", 0) : 0;
 
+        int views = i.hasExtra("views") ? i.getIntExtra("views", 0) : 0;
+        current.views = views;
+
         String desc = i.getStringExtra("description");
-        if (desc == null || desc.trim().isEmpty()) desc = "Tidak ada deskripsi.";
+        if (desc == null || desc.trim().isEmpty()) {
+            String when = (current.createdAt != null && !current.createdAt.isEmpty()) ? current.createdAt : current.publishedAt;
+            desc = "Info:\n"
+                    + "- Ditonton: " + views + "\n"
+                    + "- Upload: " + (when == null ? "-" : when) + "\n"
+                    + "- Link video: " + (current.videoUrl == null ? "-" : current.videoUrl);
+        }
         tvDesc.setText(desc);
     }
 
@@ -124,15 +130,13 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void setupUi() {
-        // Title + meta
         tvTitle.setText(current.title != null ? current.title : "—");
 
         String when = (current.createdAt != null && !current.createdAt.isEmpty()) ? current.createdAt : current.publishedAt;
-        String meta = (current.views != null ? current.views : 0) + " ditonton • " + TimeUtil.timeAgo(when);
-        tvMeta.setText(meta);
+        int v = current.views != null ? current.views : 0;
+        tvMeta.setText(v + " ditonton • " + TimeUtil.timeAgo(when));
 
-        // Toggle description
-        View.OnClickListener toggleDesc = v -> {
+        View.OnClickListener toggleDesc = vv -> {
             descOpen = !descOpen;
             tvDesc.setVisibility(descOpen ? View.VISIBLE : View.GONE);
             tvTitle.setMaxLines(descOpen ? 20 : 2);
@@ -140,66 +144,52 @@ public class PlayerActivity extends AppCompatActivity {
         tvTitle.setOnClickListener(toggleDesc);
         tvMeta.setOnClickListener(toggleDesc);
 
-        // Channel info (sementara)
+        // channel row tetap
         tvChannelName.setText("ItsNara");
         tvChannelRole.setText("ADMIN");
         Glide.with(this).load(R.mipmap.ic_launcher).into(imgChannel);
 
-        // Refresh counts
         refreshActionCounts();
 
-        // Sawer: buka Saweria tetap di dalam aplikasi (WebViewActivity)
-        btnSawer.setOnClickListener(v -> {
+        btnSawer.setOnClickListener(vv -> {
             Intent w = new Intent(this, WebViewActivity.class);
             w.putExtra("url", SAWERIA_URL);
             startActivity(w);
         });
 
-        // Bagikan
-        btnShare.setOnClickListener(v -> shareAppLink());
+        btnLike.setOnClickListener(vv -> incCount("like_"));
+        btnFav.setOnClickListener(vv -> incCount("fav_"));
+        btnDownload.setOnClickListener(vv -> downloadVideo());
+        btnShare.setOnClickListener(vv -> shareAppLink());
 
-        // Unduh
-        btnDownload.setOnClickListener(v -> downloadVideo());
-
-        // Like / Dislike / Favorit (sementara local)
-        btnLike.setOnClickListener(v -> incCount("like_"));
-        btnDislike.setOnClickListener(v -> incCount("dislike_"));
-        btnFav.setOnClickListener(v -> incCount("fav_"));
-
-        // Fullscreen
-        btnFullscreen.setOnClickListener(v -> toggleFullscreen());
+        btnFullscreen.setOnClickListener(vv -> toggleFullscreen());
     }
 
     private void incCount(String prefix) {
-        if (current.slug == null || current.slug.trim().isEmpty()) return;
-        String key = prefix + current.slug;
+        String baseKey = (current.slug != null && !current.slug.trim().isEmpty())
+                ? current.slug
+                : (current.videoUrl == null ? "no_key" : current.videoUrl);
+
+        String key = prefix + baseKey;
         int val = sp.getInt(key, 0);
         sp.edit().putInt(key, val + 1).apply();
         refreshActionCounts();
     }
 
     private void refreshActionCounts() {
-        if (current.slug == null || current.slug.trim().isEmpty()) {
-            setBtnText(btnLike, "Like 0");
-            setBtnText(btnDislike, "Dislike 0");
-            setBtnText(btnFav, "Favorit 0");
-            return;
-        }
+        String baseKey = (current.slug != null && !current.slug.trim().isEmpty())
+                ? current.slug
+                : (current.videoUrl == null ? "no_key" : current.videoUrl);
 
-        int like = sp.getInt("like_" + current.slug, 0);
-        int dislike = sp.getInt("dislike_" + current.slug, 0);
-        int fav = sp.getInt("fav_" + current.slug, 0);
+        int like = sp.getInt("like_" + baseKey, 0);
+        int fav = sp.getInt("fav_" + baseKey, 0);
 
         setBtnText(btnLike, "Like " + like);
-        setBtnText(btnDislike, "Dislike " + dislike);
         setBtnText(btnFav, "Favorit " + fav);
     }
 
     private void setBtnText(View v, String text) {
-        try {
-            ((TextView) v).setText(text);
-        } catch (Exception ignored) {
-        }
+        try { ((TextView) v).setText(text); } catch (Exception ignored) {}
     }
 
     private void shareAppLink() {
@@ -249,8 +239,7 @@ public class PlayerActivity extends AppCompatActivity {
                 c.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
                 c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             }
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
     }
 
     private void showSystemUi() {
@@ -258,8 +247,7 @@ public class PlayerActivity extends AppCompatActivity {
             View decor = getWindow().getDecorView();
             WindowInsetsController c = decor.getWindowInsetsController();
             if (c != null) c.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
     }
 
     private void openAnother(Post p) {
@@ -276,30 +264,21 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void loadRelated() {
-        // rekomendasi simple: ambil page 1, tampilkan list (kecuali current slug)
-        ApiClient.api().getPosts(1).enqueue(new Callback() {
+        ApiClient.api().getPosts(1).enqueue(new Callback<PostResponse>() {
             @Override
-            public void onResponse(Call call, Response resp) {
-                if (resp.isSuccessful() && resp.body() != null) {
-                    try {
-                        PostResponse pr = (PostResponse) resp.body();
-                        if (pr.items == null) return;
-
-                        List<Post> out = new ArrayList<>();
-                        for (Object o : pr.items) {
-                            Post p = (Post) o;
-                            if (current.slug != null && p.slug != null && current.slug.equals(p.slug)) continue;
-                            out.add(p);
-                        }
-                        relatedAdapter.setItems(out);
-                    } catch (Exception ignored) {
+            public void onResponse(Call<PostResponse> call, Response<PostResponse> resp) {
+                if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
+                    List<Post> out = new ArrayList<>();
+                    for (Post p : resp.body().items) {
+                        if (current.slug != null && p.slug != null && current.slug.equals(p.slug)) continue;
+                        out.add(p);
                     }
+                    relatedAdapter.setItems(out);
                 }
             }
 
             @Override
-            public void onFailure(Call call, Throwable t) {
-            }
+            public void onFailure(Call<PostResponse> call, Throwable t) { }
         });
     }
 

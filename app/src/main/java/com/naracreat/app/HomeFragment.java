@@ -25,6 +25,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class HomeFragment extends Fragment {
+
     private SwipeRefreshLayout swipe;
     private RecyclerView rvPosts, rvGenres;
     private EditText etSearch;
@@ -67,7 +68,7 @@ public class HomeFragment extends Fragment {
             i.putExtra("video_url", p.videoUrl);
             i.putExtra("thumbnail_url", p.thumbnailUrl);
 
-            // FIX views: harus primitive int, bukan Integer object
+            // views harus primitive int biar kebaca di PlayerActivity
             i.putExtra("views", p.views != null ? p.views : 0);
 
             i.putExtra("created_at", (p.createdAt != null && !p.createdAt.isEmpty()) ? p.createdAt : p.publishedAt);
@@ -94,16 +95,20 @@ public class HomeFragment extends Fragment {
 
     private void load() {
         swipe.setRefreshing(true);
-        ApiClient.api().getPosts(1).enqueue(new Callback() {
-            @Override public void onResponse(Call call, Response resp) {
+        ApiClient.api().getPosts(1).enqueue(new Callback<PostResponse>() {
+            @Override
+            public void onResponse(Call<PostResponse> call, Response<PostResponse> resp) {
                 swipe.setRefreshing(false);
                 if (!resp.isSuccessful() || resp.body() == null || resp.body().items == null) return;
+
                 all.clear();
                 all.addAll(resp.body().items);
                 rebuildGenres(all);
                 applyFilters();
             }
-            @Override public void onFailure(Call call, Throwable t) {
+
+            @Override
+            public void onFailure(Call<PostResponse> call, Throwable t) {
                 swipe.setRefreshing(false);
             }
         });
