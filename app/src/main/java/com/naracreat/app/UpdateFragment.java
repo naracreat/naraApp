@@ -18,18 +18,14 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class UpdateFragment extends Fragment {
-
     private SwipeRefreshLayout swipe;
     private PostAdapter adapter;
 
-    public UpdateFragment() {
-        super(R.layout.fragment_update);
-    }
+    public UpdateFragment() { super(R.layout.fragment_update); }
 
     @Override
     public void onViewCreated(@NonNull View v, @Nullable Bundle savedInstanceState) {
         swipe = v.findViewById(R.id.swipe);
-
         RecyclerView rv = v.findViewById(R.id.recycler);
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
 
@@ -38,32 +34,32 @@ public class UpdateFragment extends Fragment {
             i.putExtra("title", p.title);
             i.putExtra("video_url", p.videoUrl);
             i.putExtra("thumbnail_url", p.thumbnailUrl);
-            i.putExtra("views", p.views);
+
+            // FIX views: harus primitive int
+            i.putExtra("views", p.views != null ? p.views : 0);
+
             i.putExtra("created_at", (p.createdAt != null && !p.createdAt.isEmpty()) ? p.createdAt : p.publishedAt);
+            i.putExtra("published_at", p.publishedAt);
+            i.putExtra("slug", p.slug);
+            i.putExtra("duration_minutes", p.durationMinutes != null ? p.durationMinutes : 0);
+
             startActivity(i);
         });
 
         rv.setAdapter(adapter);
-
         swipe.setOnRefreshListener(this::load);
         load();
     }
 
     private void load() {
         swipe.setRefreshing(true);
-
-        ApiClient.api().getPosts(1).enqueue(new Callback<PostResponse>() {
-            @Override
-            public void onResponse(Call<PostResponse> call, Response<PostResponse> resp) {
+        ApiClient.api().getPosts(1).enqueue(new Callback() {
+            @Override public void onResponse(Call call, Response resp) {
                 swipe.setRefreshing(false);
                 if (!resp.isSuccessful() || resp.body() == null || resp.body().items == null) return;
-
-                // Update = list terbaru aja (page 1)
                 adapter.setItems(new ArrayList<>(resp.body().items));
             }
-
-            @Override
-            public void onFailure(Call<PostResponse> call, Throwable t) {
+            @Override public void onFailure(Call call, Throwable t) {
                 swipe.setRefreshing(false);
             }
         });

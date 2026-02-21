@@ -1,27 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@color/bg">
 
-    <!-- Video -->
+    <!-- Video (mirip YouTube: fullscreen width) -->
     <FrameLayout
-        android:id="@+id/videoContainer"
         android:layout_width="match_parent"
-        android:layout_height="220dp">
+        android:layout_height="240dp">
 
         <androidx.media3.ui.PlayerView
             android:id="@+id/playerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:use_controller="true"
-            app:show_buffering="when_playing"
             app:resize_mode="fit" />
 
-        <!-- Fullscreen button overlay -->
         <ImageView
             android:id="@+id/btnFullscreen"
             android:layout_width="40dp"
@@ -29,11 +25,11 @@
             android:layout_gravity="bottom|end"
             android:layout_margin="10dp"
             android:padding="8dp"
-            android:clickable="true"
-            android:focusable="true"
             android:src="@android:drawable/ic_menu_crop"
             android:tint="@color/text"
-            android:background="@drawable/card_dark_round" />
+            android:background="@drawable/card_dark_round"
+            android:clickable="true"
+            android:focusable="true" />
     </FrameLayout>
 
     <ScrollView
@@ -47,7 +43,7 @@
             android:orientation="vertical"
             android:padding="14dp">
 
-            <!-- Title -->
+            <!-- 2) Judul + klik buka deskripsi -->
             <TextView
                 android:id="@+id/tvTitle"
                 android:layout_width="match_parent"
@@ -59,17 +55,15 @@
                 android:maxLines="2"
                 android:ellipsize="end" />
 
-            <!-- Meta -->
             <TextView
                 android:id="@+id/tvMeta"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:text="0 ditonton • barusan"
                 android:textColor="@color/subtext"
                 android:textSize="12sp" />
 
-            <!-- Description (toggle by clicking title/meta) -->
             <TextView
                 android:id="@+id/tvDesc"
                 android:layout_width="match_parent"
@@ -79,7 +73,7 @@
                 android:textSize="13sp"
                 android:visibility="gone" />
 
-            <!-- Channel row + Sawer -->
+            <!-- 3) Profil channel samain kayak sekarang + 4) Sawer samain subscribe -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -121,23 +115,23 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
+                <!-- Tombol Sawer gaya Subscribe (pill putih) -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSawer"
                     android:layout_width="wrap_content"
                     android:layout_height="40dp"
                     android:text="Sawer"
                     android:textAllCaps="false"
-                    android:textColor="@color/text"
-                    android:backgroundTint="@color/card"
-                    app:strokeColor="@color/line"
-                    app:strokeWidth="1dp"
-                    app:cornerRadius="12dp"
+                    android:textStyle="bold"
+                    android:textColor="#111111"
+                    android:backgroundTint="#FFFFFF"
+                    app:cornerRadius="20dp"
                     app:icon="@android:drawable/ic_menu_send"
-                    app:iconTint="@color/text"
+                    app:iconTint="#111111"
                     app:iconGravity="textStart" />
             </LinearLayout>
 
-            <!-- Actions: Like / Dislike / Favorit -->
+            <!-- 5) Aksi: Like, Favorit, Unduh, Bagikan -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -156,25 +150,8 @@
                     android:backgroundTint="@color/card"
                     app:strokeColor="@color/line"
                     app:strokeWidth="1dp"
-                    app:cornerRadius="12dp"
+                    app:cornerRadius="14dp"
                     app:icon="@android:drawable/arrow_up_float"
-                    app:iconTint="@color/text"
-                    app:iconGravity="textStart" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnDislike"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="Dislike 0"
-                    android:textAllCaps="false"
-                    android:textColor="@color/text"
-                    android:backgroundTint="@color/card"
-                    app:strokeColor="@color/line"
-                    app:strokeWidth="1dp"
-                    app:cornerRadius="12dp"
-                    app:icon="@android:drawable/arrow_down_float"
                     app:iconTint="@color/text"
                     app:iconGravity="textStart" />
 
@@ -190,32 +167,24 @@
                     android:backgroundTint="@color/card"
                     app:strokeColor="@color/line"
                     app:strokeWidth="1dp"
-                    app:cornerRadius="12dp"
+                    app:cornerRadius="14dp"
                     app:icon="@android:drawable/btn_star_big_off"
                     app:iconTint="@color/text"
                     app:iconGravity="textStart" />
-            </LinearLayout>
-
-            <!-- Actions: Unduh / Bagikan -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnDownload"
                     android:layout_width="0dp"
                     android:layout_height="44dp"
                     android:layout_weight="1"
+                    android:layout_marginStart="8dp"
                     android:text="Unduh"
                     android:textAllCaps="false"
                     android:textColor="@color/text"
                     android:backgroundTint="@color/card"
                     app:strokeColor="@color/line"
                     app:strokeWidth="1dp"
-                    app:cornerRadius="12dp"
+                    app:cornerRadius="14dp"
                     app:icon="@android:drawable/stat_sys_download"
                     app:iconTint="@color/text"
                     app:iconGravity="textStart" />
@@ -232,7 +201,7 @@
                     android:backgroundTint="@color/card"
                     app:strokeColor="@color/line"
                     app:strokeWidth="1dp"
-                    app:cornerRadius="12dp"
+                    app:cornerRadius="14dp"
                     app:icon="@android:drawable/ic_menu_share"
                     app:iconTint="@color/text"
                     app:iconGravity="textStart" />
@@ -245,7 +214,7 @@
                 android:layout_marginTop="14dp"
                 android:background="#22FFFFFF" />
 
-            <!-- Related title -->
+            <!-- 7) Video lainnya tetap model sekarang -->
             <TextView
                 android:id="@+id/tvRelatedTitle"
                 android:layout_width="match_parent"

@@ -25,24 +25,21 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class HomeFragment extends Fragment {
-
     private SwipeRefreshLayout swipe;
     private RecyclerView rvPosts, rvGenres;
     private EditText etSearch;
 
     private final List<Post> all = new ArrayList<>();
     private final List<Post> filtered = new ArrayList<>();
-
     private final List<String> genres = new ArrayList<>();
+
     private GenreAdapter genreAdapter;
     private PostAdapter postAdapter;
 
     private String activeGenre = "Semua";
     private String q = "";
 
-    public HomeFragment() {
-        super(R.layout.fragment_home);
-    }
+    public HomeFragment() { super(R.layout.fragment_home); }
 
     @Override
     public void onViewCreated(@NonNull View v, @Nullable Bundle savedInstanceState) {
@@ -69,8 +66,15 @@ public class HomeFragment extends Fragment {
             i.putExtra("title", p.title);
             i.putExtra("video_url", p.videoUrl);
             i.putExtra("thumbnail_url", p.thumbnailUrl);
-            i.putExtra("views", p.views);
+
+            // FIX views: harus primitive int, bukan Integer object
+            i.putExtra("views", p.views != null ? p.views : 0);
+
             i.putExtra("created_at", (p.createdAt != null && !p.createdAt.isEmpty()) ? p.createdAt : p.publishedAt);
+            i.putExtra("published_at", p.publishedAt);
+            i.putExtra("slug", p.slug);
+            i.putExtra("duration_minutes", p.durationMinutes != null ? p.durationMinutes : 0);
+
             startActivity(i);
         });
         rvPosts.setAdapter(postAdapter);
@@ -85,27 +89,21 @@ public class HomeFragment extends Fragment {
         });
 
         swipe.setOnRefreshListener(this::load);
-
         load();
     }
 
     private void load() {
         swipe.setRefreshing(true);
-
-        ApiClient.api().getPosts(1).enqueue(new Callback<PostResponse>() {
-            @Override public void onResponse(Call<PostResponse> call, Response<PostResponse> resp) {
+        ApiClient.api().getPosts(1).enqueue(new Callback() {
+            @Override public void onResponse(Call call, Response resp) {
                 swipe.setRefreshing(false);
-
                 if (!resp.isSuccessful() || resp.body() == null || resp.body().items == null) return;
-
                 all.clear();
                 all.addAll(resp.body().items);
-
                 rebuildGenres(all);
                 applyFilters();
             }
-
-            @Override public void onFailure(Call<PostResponse> call, Throwable t) {
+            @Override public void onFailure(Call call, Throwable t) {
                 swipe.setRefreshing(false);
             }
         });
@@ -114,16 +112,13 @@ public class HomeFragment extends Fragment {
     private void rebuildGenres(List<Post> posts) {
         LinkedHashSet<String> set = new LinkedHashSet<>();
         set.add("Semua");
-
         for (Post p : posts) {
             String g = pickGenreFromTitle(p.title);
             if (g != null && !g.trim().isEmpty()) set.add(g.trim());
         }
-
         genres.clear();
         genres.addAll(set);
 
-        // reset active genre kalau gak ada
         if (!genres.contains(activeGenre)) activeGenre = "Semua";
         genreAdapter.setActive(activeGenre);
         genreAdapter.notifyDataSetChanged();
@@ -131,7 +126,6 @@ public class HomeFragment extends Fragment {
 
     private void applyFilters() {
         filtered.clear();
-
         String qq = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
 
         for (Post p : all) {
@@ -143,16 +137,13 @@ public class HomeFragment extends Fragment {
 
             if (okGenre && okSearch) filtered.add(p);
         }
-
         postAdapter.setItems(filtered);
     }
 
-    // Genre dari judul: [3D], [L2D], dll. Kalau gak ada, "Lainnya"
     private String pickGenreFromTitle(String title) {
         if (title == null) return "Lainnya";
         String t = title.trim();
 
-        // Cari pola [XXXX]
         int a = t.indexOf('[');
         int b = t.indexOf(']');
         if (a >= 0 && b > a && (b - a) <= 8) {
@@ -160,7 +151,6 @@ public class HomeFragment extends Fragment {
             if (!inside.isEmpty()) return inside.toUpperCase(Locale.ROOT);
         }
 
-        // fallback sederhana
         if (t.toLowerCase(Locale.ROOT).contains("3d")) return "3D";
         if (t.toLowerCase(Locale.ROOT).contains("l2d")) return "L2D";
         return "Lainnya";
