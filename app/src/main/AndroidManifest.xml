@@ -8,12 +8,24 @@
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.NaraApp">
+        android:theme="@style/Theme.NaraApp"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round">
 
         <activity
             android:name=".PlayerActivity"
             android:exported="false"
             android:screenOrientation="sensor" />
+
+        <!-- Saweria in-app -->
+        <activity
+            android:name=".SawerActivity"
+            android:exported="false" />
+
+        <!-- kalau masih kepake buat buka web lain -->
+        <activity
+            android:name=".WebViewActivity"
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"
@@ -25,5 +37,4 @@
         </activity>
 
     </application>
-
 </manifest>
