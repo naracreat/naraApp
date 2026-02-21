@@ -6,8 +6,9 @@
     android:orientation="vertical"
     android:background="@color/bg">
 
-    <!-- Video (mirip YouTube: fullscreen width) -->
+    <!-- Video -->
     <FrameLayout
+        android:id="@+id/videoContainer"
         android:layout_width="match_parent"
         android:layout_height="240dp">
 
@@ -33,6 +34,7 @@
     </FrameLayout>
 
     <ScrollView
+        android:id="@+id/contentScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
@@ -43,7 +45,7 @@
             android:orientation="vertical"
             android:padding="14dp">
 
-            <!-- 2) Judul + klik buka deskripsi -->
+            <!-- Judul + klik buka deskripsi -->
             <TextView
                 android:id="@+id/tvTitle"
                 android:layout_width="match_parent"
@@ -73,7 +75,7 @@
                 android:textSize="13sp"
                 android:visibility="gone" />
 
-            <!-- 3) Profil channel samain kayak sekarang + 4) Sawer samain subscribe -->
+            <!-- Profil channel + tombol Sawer gaya subscribe -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -115,7 +117,6 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <!-- Tombol Sawer gaya Subscribe (pill putih) -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnSawer"
                     android:layout_width="wrap_content"
@@ -125,13 +126,10 @@
                     android:textStyle="bold"
                     android:textColor="#111111"
                     android:backgroundTint="#FFFFFF"
-                    app:cornerRadius="20dp"
-                    app:icon="@android:drawable/ic_menu_send"
-                    app:iconTint="#111111"
-                    app:iconGravity="textStart" />
+                    app:cornerRadius="20dp" />
             </LinearLayout>
 
-            <!-- 5) Aksi: Like, Favorit, Unduh, Bagikan -->
+            <!-- Aksi: icon DIHAPUS -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -150,10 +148,7 @@
                     android:backgroundTint="@color/card"
                     app:strokeColor="@color/line"
                     app:strokeWidth="1dp"
-                    app:cornerRadius="14dp"
-                    app:icon="@android:drawable/arrow_up_float"
-                    app:iconTint="@color/text"
-                    app:iconGravity="textStart" />
+                    app:cornerRadius="14dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnFav"
@@ -161,16 +156,13 @@
                     android:layout_height="44dp"
                     android:layout_weight="1"
                     android:layout_marginStart="8dp"
-                    android:text="Favorit 0"
+                    android:text="Fav 0"
                     android:textAllCaps="false"
                     android:textColor="@color/text"
                     android:backgroundTint="@color/card"
                     app:strokeColor="@color/line"
                     app:strokeWidth="1dp"
-                    app:cornerRadius="14dp"
-                    app:icon="@android:drawable/btn_star_big_off"
-                    app:iconTint="@color/text"
-                    app:iconGravity="textStart" />
+                    app:cornerRadius="14dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnDownload"
@@ -184,10 +176,7 @@
                     android:backgroundTint="@color/card"
                     app:strokeColor="@color/line"
                     app:strokeWidth="1dp"
-                    app:cornerRadius="14dp"
-                    app:icon="@android:drawable/stat_sys_download"
-                    app:iconTint="@color/text"
-                    app:iconGravity="textStart" />
+                    app:cornerRadius="14dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnShare"
@@ -201,10 +190,7 @@
                     android:backgroundTint="@color/card"
                     app:strokeColor="@color/line"
                     app:strokeWidth="1dp"
-                    app:cornerRadius="14dp"
-                    app:icon="@android:drawable/ic_menu_share"
-                    app:iconTint="@color/text"
-                    app:iconGravity="textStart" />
+                    app:cornerRadius="14dp" />
             </LinearLayout>
 
             <!-- Divider -->
@@ -214,7 +200,7 @@
                 android:layout_marginTop="14dp"
                 android:background="#22FFFFFF" />
 
-            <!-- 7) Video lainnya tetap model sekarang -->
+            <!-- Video terkait (tetep) -->
             <TextView
                 android:id="@+id/tvRelatedTitle"
                 android:layout_width="match_parent"

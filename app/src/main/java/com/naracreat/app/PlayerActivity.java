@@ -9,9 +9,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
@@ -35,6 +38,9 @@ public class PlayerActivity extends AppCompatActivity {
 
     private PlayerView playerView;
     private ExoPlayer player;
+
+    private FrameLayout videoContainer;
+    private ScrollView contentScroll;
 
     private TextView tvTitle, tvMeta, tvDesc, tvChannelName, tvChannelRole;
     private ImageView imgChannel, btnFullscreen;
@@ -68,6 +74,9 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void bindViews() {
+        videoContainer = findViewById(R.id.videoContainer);
+        contentScroll = findViewById(R.id.contentScroll);
+
         playerView = findViewById(R.id.playerView);
         btnFullscreen = findViewById(R.id.btnFullscreen);
 
@@ -151,6 +160,7 @@ public class PlayerActivity extends AppCompatActivity {
 
         refreshActionCounts();
 
+        // Sawer: buka Saweria di dalam aplikasi (WebViewActivity)
         btnSawer.setOnClickListener(vv -> {
             Intent w = new Intent(this, WebViewActivity.class);
             w.putExtra("url", SAWERIA_URL);
@@ -185,7 +195,7 @@ public class PlayerActivity extends AppCompatActivity {
         int fav = sp.getInt("fav_" + baseKey, 0);
 
         setBtnText(btnLike, "Like " + like);
-        setBtnText(btnFav, "Favorit " + fav);
+        setBtnText(btnFav, "Fav " + fav);
     }
 
     private void setBtnText(View v, String text) {
@@ -219,16 +229,36 @@ public class PlayerActivity extends AppCompatActivity {
         if (dm != null) dm.enqueue(req);
     }
 
+    // ✅ Fullscreen beneran full layar (kayak YouTube)
     private void toggleFullscreen() {
         isFullscreen = !isFullscreen;
 
         if (isFullscreen) {
+            // landscape + video container full height
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            contentScroll.setVisibility(View.GONE);
+
+            ViewGroup.LayoutParams lp = videoContainer.getLayoutParams();
+            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            videoContainer.setLayoutParams(lp);
+
             hideSystemUi();
         } else {
+            // balik normal
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            contentScroll.setVisibility(View.VISIBLE);
+
+            ViewGroup.LayoutParams lp = videoContainer.getLayoutParams();
+            lp.height = dpToPx(240);
+            videoContainer.setLayoutParams(lp);
+
             showSystemUi();
         }
+    }
+
+    private int dpToPx(int dp) {
+        float d = getResources().getDisplayMetrics().density;
+        return (int) (dp * d + 0.5f);
     }
 
     private void hideSystemUi() {
@@ -280,6 +310,15 @@ public class PlayerActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<PostResponse> call, Throwable t) { }
         });
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (isFullscreen) {
+            toggleFullscreen();
+            return;
+        }
+        super.onBackPressed();
     }
 
     @Override
