@@ -9,230 +9,295 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageButton;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.media3.common.MediaItem;
-import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+
+import androidx.media3.common.MediaItem;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.ui.PlayerView;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class PlayerActivity extends AppCompatActivity {
 
+    private PlayerView playerView;
     private ExoPlayer player;
+
+    private TextView tvTitle, tvMeta, tvDesc, tvChannelName, tvChannelRole;
+    private ImageView imgChannel, btnFullscreen;
+
+    private View btnSawer, btnShare, btnDownload, btnLike, btnDislike, btnFav;
+    private TextView likeText, dislikeText, favText; // MaterialButton text access via setText, but we keep references as View then cast when needed.
+
+    private RecyclerView rvRelated;
+    private RelatedAdapter relatedAdapter;
+
+    private SharedPreferences sp;
+
+    private Post current;
+    private boolean descOpen = false;
     private boolean isFullscreen = false;
+
+    // Link aplikasi kamu (buat share). Ubah sesuai domain/link kamu.
+    private static final String APP_LINK_BASE = "https://narahentai.pages.dev/app/";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // portrait default
-        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-
         setContentView(R.layout.activity_player);
 
-        SharedPreferences sp = getSharedPreferences("nara", MODE_PRIVATE);
+        sp = getSharedPreferences("nara_local", MODE_PRIVATE);
 
-        PlayerView playerView = findViewById(R.id.playerView);
-        View playerFrame = findViewById(R.id.playerFrame);
-        ImageButton btnFullscreen = findViewById(R.id.btnFullscreen);
+        bindViews();
+        readIntentPost();
+        setupPlayer();
+        setupUi();
+        loadRelated(); // ambil list lagi (page 1) untuk rekomendasi sederhana
+    }
 
-        TextView tvTitle = findViewById(R.id.tvTitle);
-        TextView tvViews = findViewById(R.id.tvViews);
-        TextView tvTimeAgo = findViewById(R.id.tvTimeAgo);
-        TextView tvDesc = findViewById(R.id.tvDescription);
+    private void bindViews() {
+        playerView = findViewById(R.id.playerView);
+        btnFullscreen = findViewById(R.id.btnFullscreen);
 
-        TextView tvChannelMeta = findViewById(R.id.tvChannelMeta);
-        tvChannelMeta.setText("ADMIN");
+        tvTitle = findViewById(R.id.tvTitle);
+        tvMeta = findViewById(R.id.tvMeta);
+        tvDesc = findViewById(R.id.tvDesc);
 
-        TextView btnLike = findViewById(R.id.btnLike);
-        TextView btnFav = findViewById(R.id.btnFav);
-        TextView btnDownload = findViewById(R.id.btnDownload);
-        TextView btnShare = findViewById(R.id.btnShare);
+        imgChannel = findViewById(R.id.imgChannel);
+        tvChannelName = findViewById(R.id.tvChannelName);
+        tvChannelRole = findViewById(R.id.tvChannelRole);
 
-        findViewById(R.id.btnSawer).setOnClickListener(v ->
-                startActivity(new Intent(this, SawerActivity.class))
-        );
+        btnSawer = findViewById(R.id.btnSawer);
+        btnShare = findViewById(R.id.btnShare);
+        btnDownload = findViewById(R.id.btnDownload);
+        btnLike = findViewById(R.id.btnLike);
+        btnDislike = findViewById(R.id.btnDislike);
+        btnFav = findViewById(R.id.btnFav);
 
-        RecyclerView rvRelated = findViewById(R.id.rvRelated);
+        rvRelated = findViewById(R.id.rvRelated);
         rvRelated.setLayoutManager(new LinearLayoutManager(this));
+        relatedAdapter = new RelatedAdapter(new ArrayList<>(), p -> openAnother(p));
+        rvRelated.setAdapter(relatedAdapter);
+    }
 
-        // extras
-        String title = getIntent().getStringExtra("title");
-        String slug = getIntent().getStringExtra("slug");
-        String videoUrl = getIntent().getStringExtra("video_url");
-        String createdAt = getIntent().getStringExtra("created_at");
-        String publishedAt = getIntent().getStringExtra("published_at");
-        int views = getIntent().getIntExtra("views", 0);
-        String desc = getIntent().getStringExtra("description");
-        String thumb = getIntent().getStringExtra("thumbnail_url");
+    private void readIntentPost() {
+        Intent i = getIntent();
+        current = new Post();
+        current.title = i.getStringExtra("title");
+        current.videoUrl = i.getStringExtra("video_url");
+        current.thumbnailUrl = i.getStringExtra("thumbnail_url");
+        current.views = i.hasExtra("views") ? i.getIntExtra("views", 0) : 0;
+        current.createdAt = i.getStringExtra("created_at");
+        current.publishedAt = i.getStringExtra("published_at");
+        current.slug = i.getStringExtra("slug");
+        current.durationMinutes = i.hasExtra("duration_minutes") ? i.getIntExtra("duration_minutes", 0) : 0;
 
-        tvTitle.setText(title != null ? title : "—");
-        tvViews.setText(String.valueOf(views));
-        String when = (publishedAt != null && !publishedAt.isEmpty()) ? publishedAt : createdAt;
-        tvTimeAgo.setText(TimeUtil.timeAgo(when != null ? when : ""));
-        tvDesc.setText(desc != null ? desc : "");
+        // Deskripsi optional (kalau belum ada API, aman)
+        String desc = i.getStringExtra("description");
+        if (desc == null || desc.trim().isEmpty()) desc = "Tidak ada deskripsi.";
+        tvDesc.setText(desc);
+    }
 
-        // toggle desc on title click
-        tvTitle.setOnClickListener(v -> {
-            tvDesc.setVisibility(tvDesc.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
-        });
-
-        // build Post for history/fav
-        Post current = new Post();
-        current.title = title;
-        current.slug = slug;
-        current.videoUrl = videoUrl;
-        current.thumbnailUrl = thumb;
-        current.views = views;
-        current.createdAt = createdAt;
-        current.publishedAt = publishedAt;
-        current.description = desc;
-
-        // push history always
-        HistoryStore.pushHistory(sp, current);
-
-        // fullscreen toggle
-        btnFullscreen.setOnClickListener(v -> toggleFullscreen(playerFrame));
-
-        // init player
+    private void setupPlayer() {
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
 
-        if (videoUrl != null && !videoUrl.isEmpty()) {
-            player.setMediaItem(MediaItem.fromUri(Uri.parse(videoUrl)));
+        if (current.videoUrl != null && !current.videoUrl.trim().isEmpty()) {
+            MediaItem item = MediaItem.fromUri(Uri.parse(current.videoUrl));
+            player.setMediaItem(item);
             player.prepare();
             player.play();
-        } else {
-            Toast.makeText(this, "Video URL kosong", Toast.LENGTH_SHORT).show();
         }
+    }
 
-        // like/fav require login
-        boolean logged = sp.getBoolean("logged_in", false);
-        refreshButtons(sp, logged, current, btnLike, btnFav);
+    private void setupUi() {
+        // Title + meta
+        tvTitle.setText(current.title != null ? current.title : "—");
 
+        String when = (current.createdAt != null && !current.createdAt.isEmpty()) ? current.createdAt : current.publishedAt;
+        String meta = (current.views != null ? current.views : 0) + " ditonton • " + TimeUtil.timeAgo(when);
+        tvMeta.setText(meta);
+
+        // Title click -> toggle description
+        View.OnClickListener toggleDesc = v -> {
+            descOpen = !descOpen;
+            tvDesc.setVisibility(descOpen ? View.VISIBLE : View.GONE);
+            tvTitle.setMaxLines(descOpen ? 20 : 2);
+        };
+        tvTitle.setOnClickListener(toggleDesc);
+        tvMeta.setOnClickListener(toggleDesc);
+
+        // Channel (pakai yang kamu punya sekarang)
+        tvChannelName.setText("ItsNara");
+        tvChannelRole.setText("ADMIN");
+        Glide.with(this).load(R.mipmap.ic_launcher).into(imgChannel);
+
+        // Counters (sementara local; nanti login+server belakangan)
+        refreshActionCounts();
+
+        // Sawer in-app
+        btnSawer.setOnClickListener(v -> {
+            startActivity(new Intent(this, SawerActivity.class));
+        });
+
+        // Share: pakai link aplikasi (bukan CDN)
+        btnShare.setOnClickListener(v -> shareAppLink());
+
+        // Download: simpan ke HP
+        btnDownload.setOnClickListener(v -> downloadVideo());
+
+        // Like/Dislike/Fav -> angka
         btnLike.setOnClickListener(v -> {
-            boolean isLogged = sp.getBoolean("logged_in", false);
-            if (!isLogged) {
-                Toast.makeText(this, "Login dulu untuk Suka", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            boolean on = !sp.getBoolean("like_" + safe(slug), false);
-            sp.edit().putBoolean("like_" + safe(slug), on).apply();
-            Toast.makeText(this, on ? "Disukai" : "Batal suka", Toast.LENGTH_SHORT).show();
-            refreshButtons(sp, true, current, btnLike, btnFav);
+            if (current.slug == null) return;
+            String key = "like_" + current.slug;
+            int val = sp.getInt(key, 0);
+            sp.edit().putInt(key, val + 1).apply();
+            refreshActionCounts();
+        });
+
+        btnDislike.setOnClickListener(v -> {
+            if (current.slug == null) return;
+            String key = "dislike_" + current.slug;
+            int val = sp.getInt(key, 0);
+            sp.edit().putInt(key, val + 1).apply();
+            refreshActionCounts();
         });
 
         btnFav.setOnClickListener(v -> {
-            boolean isLogged = sp.getBoolean("logged_in", false);
-            if (!isLogged) {
-                Toast.makeText(this, "Login dulu untuk Favorit", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            boolean on = !sp.getBoolean("fav_" + safe(slug), false);
-            sp.edit().putBoolean("fav_" + safe(slug), on).apply();
-            HistoryStore.setFav(sp, current, on);
-            Toast.makeText(this, on ? "Masuk favorit" : "Hapus favorit", Toast.LENGTH_SHORT).show();
-            refreshButtons(sp, true, current, btnLike, btnFav);
+            if (current.slug == null) return;
+            String key = "fav_" + current.slug;
+            int val = sp.getInt(key, 0);
+            sp.edit().putInt(key, val + 1).apply();
+            refreshActionCounts();
         });
 
-        // download
-        btnDownload.setOnClickListener(v -> {
-            if (videoUrl == null || videoUrl.isEmpty()) return;
-
-            DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
-            DownloadManager.Request r = new DownloadManager.Request(Uri.parse(videoUrl));
-            r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
-            r.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
-                    "NaraApp_" + System.currentTimeMillis() + ".mp4");
-            dm.enqueue(r);
-
-            Toast.makeText(this, "Mulai unduh…", Toast.LENGTH_SHORT).show();
-        });
-
-        // share => link app (web watch slug)
-        btnShare.setOnClickListener(v -> {
-            String shareUrl = "https://narahentai.pages.dev/watch?slug=" + Uri.encode(safe(slug));
-            Intent share = new Intent(Intent.ACTION_SEND);
-            share.setType("text/plain");
-            share.putExtra(Intent.EXTRA_TEXT, (title != null ? title : "Video") + "\n" + shareUrl);
-            startActivity(Intent.createChooser(share, "Bagikan"));
-        });
-
-        // related list (page 1)
-        RelatedAdapter related = new RelatedAdapter(new java.util.ArrayList<>(), p -> {
-            Intent i = new Intent(this, PlayerActivity.class);
-            i.putExtra("title", p.title);
-            i.putExtra("slug", p.slug);
-            i.putExtra("video_url", p.videoUrl);
-            i.putExtra("thumbnail_url", p.thumbnailUrl);
-            i.putExtra("views", p.views);
-            i.putExtra("created_at", p.createdAt);
-            i.putExtra("published_at", p.publishedAt);
-            i.putExtra("description", p.description);
-            startActivity(i);
-            finish();
-        });
-        rvRelated.setAdapter(related);
-
-        ApiClient.api().getPosts(1).enqueue(new retrofit2.Callback<PostResponse>() {
-            @Override public void onResponse(retrofit2.Call<PostResponse> call, retrofit2.Response<PostResponse> resp) {
-                if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
-                    java.util.ArrayList<Post> list = new java.util.ArrayList<>();
-                    for (Post p : resp.body().items) {
-                        if (p != null && p.slug != null && !p.slug.equals(slug)) list.add(p);
-                        if (list.size() >= 12) break;
-                    }
-                    related.setItems(list);
-                }
-            }
-            @Override public void onFailure(retrofit2.Call<PostResponse> call, Throwable t) {}
-        });
+        // Fullscreen toggle
+        btnFullscreen.setOnClickListener(v -> toggleFullscreen());
     }
 
-    private void refreshButtons(SharedPreferences sp, boolean logged, Post current, TextView btnLike, TextView btnFav) {
-        String slug = current != null ? current.slug : "";
-        boolean like = logged && sp.getBoolean("like_" + safe(slug), false);
-        boolean fav = logged && sp.getBoolean("fav_" + safe(slug), false);
+    private void refreshActionCounts() {
+        if (current.slug == null) {
+            setBtnText(btnLike, "0");
+            setBtnText(btnDislike, "0");
+            setBtnText(btnFav, "0");
+            return;
+        }
+        int like = sp.getInt("like_" + current.slug, 0);
+        int dislike = sp.getInt("dislike_" + current.slug, 0);
+        int fav = sp.getInt("fav_" + current.slug, 0);
 
-        btnLike.setText(like ? "Suka (On)" : "Suka");
-        btnFav.setText(fav ? "Favorit (On)" : "Favorit");
+        setBtnText(btnLike, String.valueOf(like));
+        setBtnText(btnDislike, String.valueOf(dislike));
+        setBtnText(btnFav, String.valueOf(fav));
     }
 
-    private void toggleFullscreen(View playerFrame) {
+    private void setBtnText(View v, String text) {
+        try {
+            // MaterialButton extends Button -> setText exists
+            ((android.widget.TextView) v).setText(text);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void shareAppLink() {
+        String slug = (current.slug != null && !current.slug.trim().isEmpty()) ? current.slug : "home";
+        String link = APP_LINK_BASE + slug;
+
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(Intent.EXTRA_TEXT, link);
+        startActivity(Intent.createChooser(send, "Bagikan"));
+    }
+
+    private void downloadVideo() {
+        if (current.videoUrl == null || current.videoUrl.trim().isEmpty()) return;
+
+        DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+        Uri uri = Uri.parse(current.videoUrl);
+
+        DownloadManager.Request req = new DownloadManager.Request(uri);
+        req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+        req.setAllowedOverRoaming(true);
+        req.setAllowedOverMetered(true);
+
+        String name = (current.slug != null && !current.slug.trim().isEmpty()) ? current.slug : "video";
+        req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "nara_" + name + ".mp4");
+
+        if (dm != null) dm.enqueue(req);
+    }
+
+    private void toggleFullscreen() {
         isFullscreen = !isFullscreen;
 
         if (isFullscreen) {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-            getWindow().getDecorView().setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            );
-            ViewGroup.LayoutParams lp = playerFrame.getLayoutParams();
-            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-            playerFrame.setLayoutParams(lp);
+            hideSystemUi();
         } else {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE);
-            ViewGroup.LayoutParams lp = playerFrame.getLayoutParams();
-            lp.height = dp(220);
-            playerFrame.setLayoutParams(lp);
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
+            showSystemUi();
         }
     }
 
-    private int dp(int v) {
-        float d = getResources().getDisplayMetrics().density;
-        return (int) (v * d);
+    private void hideSystemUi() {
+        try {
+            View decor = getWindow().getDecorView();
+            WindowInsetsController c = decor.getWindowInsetsController();
+            if (c != null) {
+                c.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+                c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } catch (Exception ignored) {}
     }
 
-    private String safe(String s) {
-        return s == null ? "" : s;
+    private void showSystemUi() {
+        try {
+            View decor = getWindow().getDecorView();
+            WindowInsetsController c = decor.getWindowInsetsController();
+            if (c != null) c.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+        } catch (Exception ignored) {}
+    }
+
+    private void openAnother(Post p) {
+        Intent i = new Intent(this, PlayerActivity.class);
+        i.putExtra("title", p.title);
+        i.putExtra("video_url", p.videoUrl);
+        i.putExtra("thumbnail_url", p.thumbnailUrl);
+        i.putExtra("views", p.views != null ? p.views : 0);
+        i.putExtra("created_at", p.createdAt);
+        i.putExtra("published_at", p.publishedAt);
+        i.putExtra("slug", p.slug);
+        i.putExtra("duration_minutes", p.durationMinutes != null ? p.durationMinutes : 0);
+        startActivity(i);
+    }
+
+    private void loadRelated() {
+        // rekomendasi simple: ambil page 1, tampilkan list (kecuali current slug)
+        ApiClient.api().posts(1, null, null).enqueue(new retrofit2.Callback<PostResponse>() {
+            @Override
+            public void onResponse(retrofit2.Call<PostResponse> call, retrofit2.Response<PostResponse> resp) {
+                if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
+                    List<Post> src = resp.body().items;
+                    List<Post> out = new ArrayList<>();
+                    for (Post p : src) {
+                        if (current.slug != null && p.slug != null && current.slug.equals(p.slug)) continue;
+                        out.add(p);
+                    }
+                    relatedAdapter.setItems(out);
+                }
+            }
+
+            @Override public void onFailure(retrofit2.Call<PostResponse> call, Throwable t) {}
+        });
     }
 
     @Override

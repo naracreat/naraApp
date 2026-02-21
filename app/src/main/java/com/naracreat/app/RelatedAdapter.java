@@ -11,23 +11,22 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
 
     public interface OnClick { void onClick(Post p); }
 
-    private List<Post> items = new ArrayList<>();
+    private List<Post> items;
     private final OnClick onClick;
 
     public RelatedAdapter(List<Post> items, OnClick onClick) {
-        setItems(items);
+        this.items = items;
         this.onClick = onClick;
     }
 
     public void setItems(List<Post> newItems) {
-        this.items = newItems != null ? newItems : new ArrayList<>();
+        this.items = newItems;
         notifyDataSetChanged();
     }
 
@@ -42,33 +41,35 @@ public class RelatedAdapter extends RecyclerView.Adapter<RelatedAdapter.VH> {
         Post p = items.get(pos);
 
         h.title.setText(p.title != null ? p.title : "—");
-        int views = (p.views != null) ? p.views : 0;
-        h.meta.setText(views + " views • " + TimeUtil.timeAgo(p.timeSrc() != null ? p.timeSrc() : ""));
 
-        if (p.thumbnailUrl != null && !p.thumbnailUrl.isEmpty()) {
-            Glide.with(h.thumb.getContext())
-                    .load(p.thumbnailUrl)
-                    .centerCrop()
-                    .placeholder(R.drawable.thumb_placeholder)
-                    .error(R.drawable.thumb_placeholder)
-                    .into(h.thumb);
-        } else {
-            h.thumb.setImageResource(R.drawable.thumb_placeholder);
-        }
+        int views = (p.views != null) ? p.views : 0;
+        String timeSrc = (p.createdAt != null && !p.createdAt.isEmpty()) ? p.createdAt
+                : (p.publishedAt != null ? p.publishedAt : "");
+        h.meta.setText(views + " ditonton • " + TimeUtil.timeAgo(timeSrc));
+
+        String thumb = p.thumbnailUrl;
+        Glide.with(h.thumb.getContext())
+                .load(thumb)
+                .placeholder(R.mipmap.ic_launcher)
+                .into(h.thumb);
+
+        int dm = (p.durationMinutes != null) ? p.durationMinutes : 0;
+        h.duration.setText(TimeUtil.mmssFromMinutes(dm));
 
         h.itemView.setOnClickListener(v -> onClick.onClick(p));
     }
 
-    @Override public int getItemCount() { return items.size(); }
+    @Override public int getItemCount() { return items != null ? items.size() : 0; }
 
     static class VH extends RecyclerView.ViewHolder {
         ImageView thumb;
-        TextView title, meta;
+        TextView title, meta, duration;
         VH(@NonNull View itemView) {
             super(itemView);
             thumb = itemView.findViewById(R.id.imgThumb);
             title = itemView.findViewById(R.id.tvTitle);
             meta = itemView.findViewById(R.id.tvMeta);
+            duration = itemView.findViewById(R.id.tvDuration);
         }
     }
 }

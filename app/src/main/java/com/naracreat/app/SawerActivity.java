@@ -1,27 +1,29 @@
 package com.naracreat.app;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.webkit.WebSettings;
+import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SawerActivity extends AppCompatActivity {
 
+    public static final String SAWER_URL = "https://saweria.co/Narapoi";
+
+    @SuppressLint("SetJavaScriptEnabled")
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sawer);
 
         WebView web = findViewById(R.id.web);
-        WebSettings s = web.getSettings();
-        s.setJavaScriptEnabled(true);
-        s.setDomStorageEnabled(true);
-
+        web.getSettings().setJavaScriptEnabled(true);
+        web.getSettings().setDomStorageEnabled(true);
         web.setWebViewClient(new WebViewClient());
-        web.loadUrl("https://saweria.co/Narapoi");
+        web.setWebChromeClient(new WebChromeClient());
+        web.loadUrl(SAWER_URL);
     }
 
     @Override
