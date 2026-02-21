@@ -16,17 +16,20 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.media3.common.MediaItem;
+import androidx.media3.exoplayer.ExoPlayer;
+import androidx.media3.ui.PlayerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
-import androidx.media3.common.MediaItem;
-import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.ui.PlayerView;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class PlayerActivity extends AppCompatActivity {
 
@@ -37,19 +40,19 @@ public class PlayerActivity extends AppCompatActivity {
     private ImageView imgChannel, btnFullscreen;
 
     private View btnSawer, btnShare, btnDownload, btnLike, btnDislike, btnFav;
-    private TextView likeText, dislikeText, favText; // MaterialButton text access via setText, but we keep references as View then cast when needed.
 
     private RecyclerView rvRelated;
     private RelatedAdapter relatedAdapter;
 
     private SharedPreferences sp;
-
     private Post current;
+
     private boolean descOpen = false;
     private boolean isFullscreen = false;
 
     // Link aplikasi kamu (buat share). Ubah sesuai domain/link kamu.
     private static final String APP_LINK_BASE = "https://narahentai.pages.dev/app/";
+    private static final String SAWERIA_URL = "https://saweria.co/Narapoi";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -62,7 +65,7 @@ public class PlayerActivity extends AppCompatActivity {
         readIntentPost();
         setupPlayer();
         setupUi();
-        loadRelated(); // ambil list lagi (page 1) untuk rekomendasi sederhana
+        loadRelated();
     }
 
     private void bindViews() {
@@ -86,12 +89,13 @@ public class PlayerActivity extends AppCompatActivity {
 
         rvRelated = findViewById(R.id.rvRelated);
         rvRelated.setLayoutManager(new LinearLayoutManager(this));
-        relatedAdapter = new RelatedAdapter(new ArrayList<>(), p -> openAnother(p));
+        relatedAdapter = new RelatedAdapter(new ArrayList<>(), this::openAnother);
         rvRelated.setAdapter(relatedAdapter);
     }
 
     private void readIntentPost() {
         Intent i = getIntent();
+
         current = new Post();
         current.title = i.getStringExtra("title");
         current.videoUrl = i.getStringExtra("video_url");
@@ -102,7 +106,6 @@ public class PlayerActivity extends AppCompatActivity {
         current.slug = i.getStringExtra("slug");
         current.durationMinutes = i.hasExtra("duration_minutes") ? i.getIntExtra("duration_minutes", 0) : 0;
 
-        // Deskripsi optional (kalau belum ada API, aman)
         String desc = i.getStringExtra("description");
         if (desc == null || desc.trim().isEmpty()) desc = "Tidak ada deskripsi.";
         tvDesc.setText(desc);
@@ -128,7 +131,7 @@ public class PlayerActivity extends AppCompatActivity {
         String meta = (current.views != null ? current.views : 0) + " ditonton • " + TimeUtil.timeAgo(when);
         tvMeta.setText(meta);
 
-        // Title click -> toggle description
+        // Toggle description
         View.OnClickListener toggleDesc = v -> {
             descOpen = !descOpen;
             tvDesc.setVisibility(descOpen ? View.VISIBLE : View.GONE);
@@ -137,74 +140,64 @@ public class PlayerActivity extends AppCompatActivity {
         tvTitle.setOnClickListener(toggleDesc);
         tvMeta.setOnClickListener(toggleDesc);
 
-        // Channel (pakai yang kamu punya sekarang)
+        // Channel info (sementara)
         tvChannelName.setText("ItsNara");
         tvChannelRole.setText("ADMIN");
         Glide.with(this).load(R.mipmap.ic_launcher).into(imgChannel);
 
-        // Counters (sementara local; nanti login+server belakangan)
+        // Refresh counts
         refreshActionCounts();
 
-        // Sawer in-app
+        // Sawer: buka Saweria tetap di dalam aplikasi (WebViewActivity)
         btnSawer.setOnClickListener(v -> {
-            startActivity(new Intent(this, SawerActivity.class));
+            Intent w = new Intent(this, WebViewActivity.class);
+            w.putExtra("url", SAWERIA_URL);
+            startActivity(w);
         });
 
-        // Share: pakai link aplikasi (bukan CDN)
+        // Bagikan
         btnShare.setOnClickListener(v -> shareAppLink());
 
-        // Download: simpan ke HP
+        // Unduh
         btnDownload.setOnClickListener(v -> downloadVideo());
 
-        // Like/Dislike/Fav -> angka
-        btnLike.setOnClickListener(v -> {
-            if (current.slug == null) return;
-            String key = "like_" + current.slug;
-            int val = sp.getInt(key, 0);
-            sp.edit().putInt(key, val + 1).apply();
-            refreshActionCounts();
-        });
+        // Like / Dislike / Favorit (sementara local)
+        btnLike.setOnClickListener(v -> incCount("like_"));
+        btnDislike.setOnClickListener(v -> incCount("dislike_"));
+        btnFav.setOnClickListener(v -> incCount("fav_"));
 
-        btnDislike.setOnClickListener(v -> {
-            if (current.slug == null) return;
-            String key = "dislike_" + current.slug;
-            int val = sp.getInt(key, 0);
-            sp.edit().putInt(key, val + 1).apply();
-            refreshActionCounts();
-        });
-
-        btnFav.setOnClickListener(v -> {
-            if (current.slug == null) return;
-            String key = "fav_" + current.slug;
-            int val = sp.getInt(key, 0);
-            sp.edit().putInt(key, val + 1).apply();
-            refreshActionCounts();
-        });
-
-        // Fullscreen toggle
+        // Fullscreen
         btnFullscreen.setOnClickListener(v -> toggleFullscreen());
     }
 
+    private void incCount(String prefix) {
+        if (current.slug == null || current.slug.trim().isEmpty()) return;
+        String key = prefix + current.slug;
+        int val = sp.getInt(key, 0);
+        sp.edit().putInt(key, val + 1).apply();
+        refreshActionCounts();
+    }
+
     private void refreshActionCounts() {
-        if (current.slug == null) {
-            setBtnText(btnLike, "0");
-            setBtnText(btnDislike, "0");
-            setBtnText(btnFav, "0");
+        if (current.slug == null || current.slug.trim().isEmpty()) {
+            setBtnText(btnLike, "Like 0");
+            setBtnText(btnDislike, "Dislike 0");
+            setBtnText(btnFav, "Favorit 0");
             return;
         }
+
         int like = sp.getInt("like_" + current.slug, 0);
         int dislike = sp.getInt("dislike_" + current.slug, 0);
         int fav = sp.getInt("fav_" + current.slug, 0);
 
-        setBtnText(btnLike, String.valueOf(like));
-        setBtnText(btnDislike, String.valueOf(dislike));
-        setBtnText(btnFav, String.valueOf(fav));
+        setBtnText(btnLike, "Like " + like);
+        setBtnText(btnDislike, "Dislike " + dislike);
+        setBtnText(btnFav, "Favorit " + fav);
     }
 
     private void setBtnText(View v, String text) {
         try {
-            // MaterialButton extends Button -> setText exists
-            ((android.widget.TextView) v).setText(text);
+            ((TextView) v).setText(text);
         } catch (Exception ignored) {
         }
     }
@@ -256,7 +249,8 @@ public class PlayerActivity extends AppCompatActivity {
                 c.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
                 c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private void showSystemUi() {
@@ -264,7 +258,8 @@ public class PlayerActivity extends AppCompatActivity {
             View decor = getWindow().getDecorView();
             WindowInsetsController c = decor.getWindowInsetsController();
             if (c != null) c.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private void openAnother(Post p) {
@@ -282,21 +277,29 @@ public class PlayerActivity extends AppCompatActivity {
 
     private void loadRelated() {
         // rekomendasi simple: ambil page 1, tampilkan list (kecuali current slug)
-        ApiClient.api().getPosts(1).enqueue(new retrofit2.Callback<PostResponse>() {
+        ApiClient.api().getPosts(1).enqueue(new Callback() {
             @Override
-            public void onResponse(retrofit2.Call<PostResponse> call, retrofit2.Response<PostResponse> resp) {
-                if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
-                    List<Post> src = resp.body().items;
-                    List<Post> out = new ArrayList<>();
-                    for (Post p : src) {
-                        if (current.slug != null && p.slug != null && current.slug.equals(p.slug)) continue;
-                        out.add(p);
+            public void onResponse(Call call, Response resp) {
+                if (resp.isSuccessful() && resp.body() != null) {
+                    try {
+                        PostResponse pr = (PostResponse) resp.body();
+                        if (pr.items == null) return;
+
+                        List<Post> out = new ArrayList<>();
+                        for (Object o : pr.items) {
+                            Post p = (Post) o;
+                            if (current.slug != null && p.slug != null && current.slug.equals(p.slug)) continue;
+                            out.add(p);
+                        }
+                        relatedAdapter.setItems(out);
+                    } catch (Exception ignored) {
                     }
-                    relatedAdapter.setItems(out);
                 }
             }
 
-            @Override public void onFailure(retrofit2.Call<PostResponse> call, Throwable t) {}
+            @Override
+            public void onFailure(Call call, Throwable t) {
+            }
         });
     }
 

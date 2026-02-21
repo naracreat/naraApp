@@ -10,16 +10,18 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class WebViewActivity extends AppCompatActivity {
 
+    private WebView webView;
+
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        WebView webView = new WebView(this);
+        webView = new WebView(this);
         setContentView(webView);
 
         String url = getIntent().getStringExtra("url");
-        if (url == null) url = "https://saweria.co/Narapoi";
+        if (url == null || url.trim().isEmpty()) url = "https://saweria.co/Narapoi";
 
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
@@ -33,7 +35,10 @@ public class WebViewActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        WebView w = (WebView) findViewById(android.R.id.content).getRootView();
-        super.onBackPressed();
+        if (webView != null && webView.canGoBack()) {
+            webView.goBack();
+        } else {
+            super.onBackPressed();
+        }
     }
 }
