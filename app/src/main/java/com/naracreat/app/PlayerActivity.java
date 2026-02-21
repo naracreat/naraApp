@@ -68,6 +68,10 @@ public class PlayerActivity extends AppCompatActivity {
 
         bindViews();
         readIntentPost();
+
+        // 2) riwayat: ambil dari yg terakhir ditonton dari player
+        HistoryStore.addWatched(this, current);
+
         setupPlayer();
         setupUi();
         loadRelated();
@@ -153,14 +157,12 @@ public class PlayerActivity extends AppCompatActivity {
         tvTitle.setOnClickListener(toggleDesc);
         tvMeta.setOnClickListener(toggleDesc);
 
-        // channel row tetap
         tvChannelName.setText("ItsNara");
         tvChannelRole.setText("ADMIN");
         Glide.with(this).load(R.mipmap.ic_launcher).into(imgChannel);
 
         refreshActionCounts();
 
-        // Sawer: buka Saweria di dalam aplikasi (WebViewActivity)
         btnSawer.setOnClickListener(vv -> {
             Intent w = new Intent(this, WebViewActivity.class);
             w.putExtra("url", SAWERIA_URL);
@@ -175,12 +177,15 @@ public class PlayerActivity extends AppCompatActivity {
         btnFullscreen.setOnClickListener(vv -> toggleFullscreen());
     }
 
+    // Like/Fav per user (guest vs login)
     private void incCount(String prefix) {
         String baseKey = (current.slug != null && !current.slug.trim().isEmpty())
                 ? current.slug
                 : (current.videoUrl == null ? "no_key" : current.videoUrl);
 
-        String key = prefix + baseKey;
+        String user = Session.userKey(this);
+        String key = user + "_" + prefix + baseKey;
+
         int val = sp.getInt(key, 0);
         sp.edit().putInt(key, val + 1).apply();
         refreshActionCounts();
@@ -191,8 +196,10 @@ public class PlayerActivity extends AppCompatActivity {
                 ? current.slug
                 : (current.videoUrl == null ? "no_key" : current.videoUrl);
 
-        int like = sp.getInt("like_" + baseKey, 0);
-        int fav = sp.getInt("fav_" + baseKey, 0);
+        String user = Session.userKey(this);
+
+        int like = sp.getInt(user + "_like_" + baseKey, 0);
+        int fav = sp.getInt(user + "_fav_" + baseKey, 0);
 
         setBtnText(btnLike, "Like " + like);
         setBtnText(btnFav, "Fav " + fav);
@@ -229,12 +236,10 @@ public class PlayerActivity extends AppCompatActivity {
         if (dm != null) dm.enqueue(req);
     }
 
-    // ✅ Fullscreen beneran full layar (kayak YouTube)
     private void toggleFullscreen() {
         isFullscreen = !isFullscreen;
 
         if (isFullscreen) {
-            // landscape + video container full height
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
             contentScroll.setVisibility(View.GONE);
 
@@ -244,7 +249,6 @@ public class PlayerActivity extends AppCompatActivity {
 
             hideSystemUi();
         } else {
-            // balik normal
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
             contentScroll.setVisibility(View.VISIBLE);
 

@@ -17,6 +17,11 @@
             android:exported="false"
             android:screenOrientation="sensor" />
 
+        <!-- Login -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
+
         <!-- Saweria in-app -->
         <activity
             android:name=".SawerActivity"

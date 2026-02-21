@@ -1,32 +1,43 @@
 package com.naracreat.app;
 
 import android.os.Bundle;
+import android.text.TextUtils;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private EditText etEmail, etPass;
+    private Button btnLogin;
+
     @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        EditText etUser = findViewById(R.id.etUser);
-        Button btn = findViewById(R.id.btnDoLogin);
+        etEmail = findViewById(R.id.etEmail);
+        etPass = findViewById(R.id.etPassword);
+        btnLogin = findViewById(R.id.btnLogin);
 
-        btn.setOnClickListener(v -> {
-            String u = etUser.getText().toString().trim();
-            if (u.isEmpty()) {
-                Toast.makeText(this, "Isi username dulu", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            Session.login(this, u);
-            Toast.makeText(this, "Login OK", Toast.LENGTH_SHORT).show();
-            finish();
-        });
+        btnLogin.setOnClickListener(v -> doLogin());
+    }
+
+    private void doLogin() {
+        String email = etEmail.getText() == null ? "" : etEmail.getText().toString().trim();
+        String pass = etPass.getText() == null ? "" : etPass.getText().toString();
+
+        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(pass)) {
+            Toast.makeText(this, "Email dan password wajib diisi", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // TANPA daftar: semua email+password valid untuk akun lokal
+        Session.login(this, email, pass);
+        Toast.makeText(this, "Login berhasil", Toast.LENGTH_SHORT).show();
+        finish();
     }
 }
