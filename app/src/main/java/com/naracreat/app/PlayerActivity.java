@@ -282,7 +282,7 @@ public class PlayerActivity extends AppCompatActivity {
 
     private void loadRelated() {
         // rekomendasi simple: ambil page 1, tampilkan list (kecuali current slug)
-        ApiClient.api().posts(1, null, null).enqueue(new retrofit2.Callback<PostResponse>() {
+        ApiClient.api().getPosts(1).enqueue(new retrofit2.Callback<PostResponse>() {
             @Override
             public void onResponse(retrofit2.Call<PostResponse> call, retrofit2.Response<PostResponse> resp) {
                 if (resp.isSuccessful() && resp.body() != null && resp.body().items != null) {
