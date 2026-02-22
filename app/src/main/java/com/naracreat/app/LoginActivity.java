@@ -8,37 +8,33 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-// PENTING: jangan import android.R
-import com.naracreat.app.R;
-
 public class LoginActivity extends AppCompatActivity {
 
-    private EditText etEmail, etPass;
-    private Button btnLogin;
+    private EditText etUser;
+    private Button btnDoLogin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        etEmail = findViewById(R.id.etEmail);
-        etPass = findViewById(R.id.etPassword);
-        btnLogin = findViewById(R.id.btnLogin);
+        etUser = findViewById(R.id.etUser);
+        btnDoLogin = findViewById(R.id.btnDoLogin);
 
-        btnLogin.setOnClickListener(v -> doLogin());
-    }
+        btnDoLogin.setOnClickListener(v -> {
 
-    private void doLogin() {
-        String email = etEmail.getText() == null ? "" : etEmail.getText().toString().trim();
-        String pass = etPass.getText() == null ? "" : etPass.getText().toString();
+            String email = etUser.getText() == null ? "" : etUser.getText().toString().trim();
 
-        if (TextUtils.isEmpty(email) || TextUtils.isEmpty(pass)) {
-            Toast.makeText(this, "Email dan password wajib diisi", Toast.LENGTH_SHORT).show();
-            return;
-        }
+            if (TextUtils.isEmpty(email)) {
+                Toast.makeText(this, "Masukkan email", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-        Session.login(this, email, pass);
-        Toast.makeText(this, "Login berhasil", Toast.LENGTH_SHORT).show();
-        finish();
+            // password dummy (tidak perlu daftar)
+            Session.login(this, email, "local");
+
+            Toast.makeText(this, "Login berhasil", Toast.LENGTH_SHORT).show();
+            finish();
+        });
     }
 }
