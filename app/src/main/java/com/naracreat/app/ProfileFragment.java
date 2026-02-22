@@ -3,7 +3,6 @@ package com.naracreat.app;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -19,7 +18,7 @@ public class ProfileFragment extends Fragment {
 
     private TextView tvName, tvSub;
     private TextView tvStatHistory, tvStatLike, tvStatFav, tvEmpty;
-    private Button btnLogin, tabHistory, tabLike, tabFav;
+    private View btnLogin, tabHistory, tabLike, tabFav;
     private RecyclerView rvGrid;
     private ProfileGridAdapter adapter;
 
@@ -32,7 +31,6 @@ public class ProfileFragment extends Fragment {
 
     @Override
     public void onViewCreated(@NonNull View v, @Nullable Bundle savedInstanceState) {
-
         tvName = v.findViewById(R.id.tvName);
         tvSub = v.findViewById(R.id.tvSub);
         btnLogin = v.findViewById(R.id.btnLogin);
@@ -48,9 +46,16 @@ public class ProfileFragment extends Fragment {
         tvEmpty = v.findViewById(R.id.tvEmpty);
         rvGrid = v.findViewById(R.id.rvGrid);
 
+        // guard biar gak crash kalau ada view yang null
+        if (tvName == null || tvSub == null || btnLogin == null ||
+                tvStatHistory == null || tvStatLike == null || tvStatFav == null ||
+                tabHistory == null || tabLike == null || tabFav == null ||
+                tvEmpty == null || rvGrid == null) {
+            return;
+        }
+
         rvGrid.setLayoutManager(new GridLayoutManager(requireContext(), 2));
 
-        // ✅ constructor adapter cuma nerima OnClick
         adapter = new ProfileGridAdapter(p -> {
             Intent i = new Intent(requireContext(), PlayerActivity.class);
             i.putExtra("title", p.title);
@@ -87,18 +92,24 @@ public class ProfileFragment extends Fragment {
         refresh();
     }
 
+    private void setTextIfPossible(View v, String text) {
+        if (v instanceof TextView) ((TextView) v).setText(text);
+    }
+
     private void refresh() {
+        if (!isAdded()) return;
+        if (tvName == null) return;
 
         boolean logged = Session.isLoggedIn(requireContext());
 
         if (!logged) {
             tvName.setText("Tamu");
             tvSub.setText("Masuk untuk sinkron suka & favorit");
-            btnLogin.setText("Masuk");
+            setTextIfPossible(btnLogin, "Masuk");
         } else {
             tvName.setText(Session.getEmail(requireContext()));
             tvSub.setText("Login lokal aktif");
-            btnLogin.setText("Keluar");
+            setTextIfPossible(btnLogin, "Keluar");
         }
 
         List<Post> history = HistoryStore.getHistory(requireContext());
@@ -106,7 +117,6 @@ public class ProfileFragment extends Fragment {
 
         int likeCount = 0;
         int favCount = 0;
-
         String user = Session.userKey(requireContext());
 
         for (Post p : history) {
@@ -116,7 +126,6 @@ public class ProfileFragment extends Fragment {
 
             int like = requireContext().getSharedPreferences("nara_local", 0)
                     .getInt(user + "_like_" + key, 0);
-
             int fav = requireContext().getSharedPreferences("nara_local", 0)
                     .getInt(user + "_fav_" + key, 0);
 
@@ -151,8 +160,7 @@ public class ProfileFragment extends Fragment {
             }
         }
 
-        // ✅ isi list lewat setItems (harusnya ada di adapter lo)
-        adapter.setItems(show);
+        if (adapter != null) adapter.setItems(show);
 
         tvEmpty.setVisibility(show.isEmpty() ? View.VISIBLE : View.GONE);
         rvGrid.setVisibility(show.isEmpty() ? View.GONE : View.VISIBLE);
