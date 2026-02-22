@@ -49,13 +49,18 @@ public class ProfileFragment extends Fragment {
         rvGrid = v.findViewById(R.id.rvGrid);
 
         rvGrid.setLayoutManager(new GridLayoutManager(requireContext(), 2));
-        adapter = new ProfileGridAdapter(new ArrayList<>(), p -> {
+
+        // ✅ constructor adapter cuma nerima OnClick
+        adapter = new ProfileGridAdapter(p -> {
             Intent i = new Intent(requireContext(), PlayerActivity.class);
             i.putExtra("title", p.title);
             i.putExtra("video_url", p.videoUrl);
             i.putExtra("thumbnail_url", p.thumbnailUrl);
             i.putExtra("views", p.views != null ? p.views : 0);
+            i.putExtra("created_at", p.createdAt);
+            i.putExtra("published_at", p.publishedAt);
             i.putExtra("slug", p.slug);
+            i.putExtra("duration_minutes", p.durationMinutes != null ? p.durationMinutes : 0);
             startActivity(i);
         });
         rvGrid.setAdapter(adapter);
@@ -146,6 +151,7 @@ public class ProfileFragment extends Fragment {
             }
         }
 
+        // ✅ isi list lewat setItems (harusnya ada di adapter lo)
         adapter.setItems(show);
 
         tvEmpty.setVisibility(show.isEmpty() ? View.VISIBLE : View.GONE);
