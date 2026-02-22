@@ -27,6 +27,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+// ====== ADMOB (ADDED) ======
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
+// ===========================
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,6 +69,17 @@ public class PlayerActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
+
+        // ====== ADMOB (ADDED) ======
+        try {
+            MobileAds.initialize(this, status -> {});
+            AdView adView = findViewById(R.id.adViewPlayer);
+            if (adView != null) {
+                AdRequest adRequest = new AdRequest.Builder().build();
+                adView.loadAd(adRequest);
+            }
+        } catch (Exception ignored) {}
+        // ===========================
 
         sp = getSharedPreferences("nara_local", MODE_PRIVATE);
 
@@ -339,4 +356,4 @@ public class PlayerActivity extends AppCompatActivity {
             player = null;
         }
     }
-}
+            }
