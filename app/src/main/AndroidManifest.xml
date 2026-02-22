@@ -12,6 +12,11 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round">
 
+        <!-- AdMob App ID -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-2949781994076653~6918031328"/>
+
         <activity
             android:name=".PlayerActivity"
             android:exported="false"
