@@ -19,7 +19,6 @@ public class ProfileFragment extends Fragment {
     private TextView tvName, tvSub;
     private TextView tvStatHistory, tvStatLike, tvStatFav, tvEmpty;
 
-    // ini TextView di XML, tapi kita pegang sebagai View biar aman
     private View btnLogin, tabHistory, tabLike, tabFav;
 
     private RecyclerView rvGrid;
@@ -51,25 +50,12 @@ public class ProfileFragment extends Fragment {
         tvEmpty = v.findViewById(R.id.tvEmpty);
         rvGrid = v.findViewById(R.id.rvGrid);
 
-        // guard biar ga crash kalo ada view null
         if (tvName == null || tvSub == null || btnLogin == null ||
                 tvStatHistory == null || tvStatLike == null || tvStatFav == null ||
                 tabHistory == null || tabLike == null || tabFav == null ||
                 tvEmpty == null || rvGrid == null) {
             return;
         }
-
-        // paksa bisa diklik (buat TextView "tombol")
-        forceClickable(btnLogin);
-        forceClickable(tabHistory);
-        forceClickable(tabLike);
-        forceClickable(tabFav);
-
-        // kalau ada overlay, angkat ke depan
-        btnLogin.bringToFront();
-        tabHistory.bringToFront();
-        tabLike.bringToFront();
-        tabFav.bringToFront();
 
         rvGrid.setLayoutManager(new GridLayoutManager(requireContext(), 2));
 
@@ -106,30 +92,16 @@ public class ProfileFragment extends Fragment {
         refresh();
     }
 
-    private void forceClickable(View v) {
-        v.setEnabled(true);
-        v.setClickable(true);
-        v.setFocusable(true);
-        v.setFocusableInTouchMode(true);
-    }
-
-    private void setTextIfTextView(View v, String text) {
-        if (v instanceof TextView) ((TextView) v).setText(text);
-    }
-
     private void refresh() {
         if (!isAdded() || getContext() == null) return;
-        if (tvName == null) return;
 
         boolean logged = Session.isLoggedIn(requireContext());
         if (!logged) {
             tvName.setText("Tamu");
             tvSub.setText("Masuk untuk sinkron suka & favorit");
-            setTextIfTextView(btnLogin, "Masuk");
         } else {
             tvName.setText(Session.getEmail(requireContext()));
             tvSub.setText("Login lokal aktif");
-            setTextIfTextView(btnLogin, "Keluar");
         }
 
         List<Post> history = HistoryStore.getHistory(requireContext());
@@ -189,7 +161,7 @@ public class ProfileFragment extends Fragment {
             }
         }
 
-        if (adapter != null) adapter.setItems(show);
+        adapter.setItems(show);
 
         tvEmpty.setVisibility(show.isEmpty() ? View.VISIBLE : View.GONE);
         rvGrid.setVisibility(show.isEmpty() ? View.GONE : View.VISIBLE);
