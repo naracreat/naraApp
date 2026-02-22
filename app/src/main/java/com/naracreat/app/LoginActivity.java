@@ -2,12 +2,14 @@ package com.naracreat.app;
 
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+// PENTING: jangan import android.R
+import com.naracreat.app.R;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -35,7 +37,6 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // TANPA daftar: semua email+password valid untuk akun lokal
         Session.login(this, email, pass);
         Toast.makeText(this, "Login berhasil", Toast.LENGTH_SHORT).show();
         finish();

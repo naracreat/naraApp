@@ -15,9 +15,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
+// PENTING: jangan import android.R
+import com.naracreat.app.R;
+
 public class ProfileFragment extends Fragment {
 
-    private TextView tvName, tvSub, tvWatched, tvLiked, tvFavCount;
+    private TextView tvName, tvSub, tvWatched, tvLiked, tvFavCount, tvEmpty;
     private Button btnLogin, btnTabHistory, btnTabLike, btnTabFav;
 
     private RecyclerView recycler;
@@ -35,6 +38,7 @@ public class ProfileFragment extends Fragment {
         tvWatched = v.findViewById(R.id.tvWatched);
         tvLiked = v.findViewById(R.id.tvLiked);
         tvFavCount = v.findViewById(R.id.tvFavCount);
+        tvEmpty = v.findViewById(R.id.tvEmpty);
 
         btnLogin = v.findViewById(R.id.btnLogin);
         btnTabHistory = v.findViewById(R.id.btnTabHistory);
@@ -59,7 +63,12 @@ public class ProfileFragment extends Fragment {
         recycler.setAdapter(postAdapter);
 
         btnLogin.setOnClickListener(vv -> {
-            startActivity(new Intent(requireContext(), LoginActivity.class));
+            if (Session.isLoggedIn(requireContext())) {
+                Session.logout(requireContext());
+                refresh();
+            } else {
+                startActivity(new Intent(requireContext(), LoginActivity.class));
+            }
         });
 
         btnTabHistory.setOnClickListener(vv -> { tab = Tab.HISTORY; refresh(); });
@@ -82,44 +91,44 @@ public class ProfileFragment extends Fragment {
             tvSub.setText("Masuk untuk sinkron suka & favorit");
             btnLogin.setText("Masuk");
         } else {
-            String email = Session.getEmail(requireContext());
-            tvName.setText(email);
+            tvName.setText(Session.getEmail(requireContext()));
             tvSub.setText("Login lokal aktif");
             btnLogin.setText("Keluar");
-            btnLogin.setOnClickListener(vv -> {
-                Session.logout(requireContext());
-                refresh();
-            });
         }
 
-        // Counts
         List<Post> hist = HistoryStore.getHistory(requireContext());
         tvWatched.setText(String.valueOf(hist.size()));
 
-        // Like/Fav count total: kita hitung dari prefs by scanning history list (simple, cukup buat UI)
-        int likeTotal = 0;
-        int favTotal = 0;
+        int likedItems = 0;
+        int favItems = 0;
+
+        String user = Session.userKey(requireContext());
         for (Post p : hist) {
             String baseKey = (p.slug != null && !p.slug.trim().isEmpty())
                     ? p.slug
                     : (p.videoUrl == null ? "no_key" : p.videoUrl);
-            String user = Session.userKey(requireContext());
-            int like = requireContext().getSharedPreferences("nara_local", 0).getInt(user + "_like_" + baseKey, 0);
-            int fav = requireContext().getSharedPreferences("nara_local", 0).getInt(user + "_fav_" + baseKey, 0);
-            if (like > 0) likeTotal += 1;
-            if (fav > 0) favTotal += 1;
-        }
-        tvLiked.setText(likeTotal == 0 ? "—" : String.valueOf(likeTotal));
-        tvFavCount.setText(favTotal == 0 ? "—" : String.valueOf(favTotal));
 
-        // List sesuai tab
-        if (tab == Tab.HISTORY) {
-            postAdapter.setItems(new ArrayList<>(hist));
-        } else if (tab == Tab.LIKE) {
-            postAdapter.setItems(new ArrayList<>(filterLiked(hist)));
-        } else {
-            postAdapter.setItems(new ArrayList<>(filterFav(hist)));
+            int like = requireContext().getSharedPreferences("nara_local", 0)
+                    .getInt(user + "_like_" + baseKey, 0);
+            int fav = requireContext().getSharedPreferences("nara_local", 0)
+                    .getInt(user + "_fav_" + baseKey, 0);
+
+            if (like > 0) likedItems++;
+            if (fav > 0) favItems++;
         }
+
+        tvLiked.setText(likedItems == 0 ? "—" : String.valueOf(likedItems));
+        tvFavCount.setText(favItems == 0 ? "—" : String.valueOf(favItems));
+
+        List<Post> show;
+        if (tab == Tab.HISTORY) show = hist;
+        else if (tab == Tab.LIKE) show = filterLiked(hist);
+        else show = filterFav(hist);
+
+        postAdapter.setItems(new ArrayList<>(show));
+
+        tvEmpty.setVisibility(show.isEmpty() ? View.VISIBLE : View.GONE);
+        recycler.setVisibility(show.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     private List<Post> filterLiked(List<Post> hist) {
@@ -129,7 +138,8 @@ public class ProfileFragment extends Fragment {
             String baseKey = (p.slug != null && !p.slug.trim().isEmpty())
                     ? p.slug
                     : (p.videoUrl == null ? "no_key" : p.videoUrl);
-            int like = requireContext().getSharedPreferences("nara_local", 0).getInt(user + "_like_" + baseKey, 0);
+            int like = requireContext().getSharedPreferences("nara_local", 0)
+                    .getInt(user + "_like_" + baseKey, 0);
             if (like > 0) out.add(p);
         }
         return out;
@@ -142,7 +152,8 @@ public class ProfileFragment extends Fragment {
             String baseKey = (p.slug != null && !p.slug.trim().isEmpty())
                     ? p.slug
                     : (p.videoUrl == null ? "no_key" : p.videoUrl);
-            int fav = requireContext().getSharedPreferences("nara_local", 0).getInt(user + "_fav_" + baseKey, 0);
+            int fav = requireContext().getSharedPreferences("nara_local", 0)
+                    .getInt(user + "_fav_" + baseKey, 0);
             if (fav > 0) out.add(p);
         }
         return out;
