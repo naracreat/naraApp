@@ -23,10 +23,13 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build Release APK
-        run: ./gradlew :app:assembleRelease
+        run: ./gradlew assembleRelease
+
+      - name: List build outputs
+        run: find app/build/outputs -type f
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: app/build/outputs/apk/release/app-release.apk
+          name: release-apk
+          path: app/build/outputs/**/*.apk
