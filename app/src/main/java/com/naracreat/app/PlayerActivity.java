@@ -27,24 +27,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
-<<<<<<< HEAD
-// ====== ADMOB (ADDED) ======
+// ✅ AdMob imports
 import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.MobileAds;
-// ===========================
-=======
-// AdMob
-import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
-import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
-import com.google.android.gms.ads.FullScreenContentCallback;
-import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
->>>>>>> e7c5cb9 (AdMob: interstitial before play + rewarded before download)
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,31 +70,22 @@ public class PlayerActivity extends AppCompatActivity {
     private static final String APP_LINK_BASE = "https://narahentai.pages.dev/app/";
     private static final String SAWERIA_URL = "https://saweria.co/Narapoi";
 
-    // ===== AdMob IDs =====
+    // ✅ AdMob IDs (punya lo)
     private static final String ADMOB_INTERSTITIAL_ID = "ca-app-pub-2949781994076653/5848133445";
     private static final String ADMOB_REWARDED_INTERSTITIAL_ID = "ca-app-pub-2949781994076653/2967323817";
 
+    // ✅ Ad objects
     private InterstitialAd interstitialAd;
     private RewardedInterstitialAd rewardedInterstitialAd;
 
-    private boolean pendingPlay = false;
-    private boolean pendingDownload = false;
+    // ✅ Control: jangan play sebelum interstitial selesai (kalau ada)
+    private boolean requestedStartPlayback = false;
+    private boolean startedPlayback = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
-
-        // ====== ADMOB (ADDED) ======
-        try {
-            MobileAds.initialize(this, status -> {});
-            AdView adView = findViewById(R.id.adViewPlayer);
-            if (adView != null) {
-                AdRequest adRequest = new AdRequest.Builder().build();
-                adView.loadAd(adRequest);
-            }
-        } catch (Exception ignored) {}
-        // ===========================
 
         sp = getSharedPreferences("nara_local", MODE_PRIVATE);
 
@@ -112,14 +95,18 @@ public class PlayerActivity extends AppCompatActivity {
         // 2) riwayat: ambil dari yg terakhir ditonton dari player
         HistoryStore.addWatched(this, current);
 
-        setupPlayer();
+        // ✅ init ads + pre-load
+        initAdMob();
+        loadInterstitial();
+        loadRewardedInterstitial();
+
+        // ✅ UI dulu (biar tombol dll aman)
         setupUi();
-
-        // Ads: init + load, lalu tampilkan interstitial sebelum play
-        initAndLoadAds();
-        maybeShowInterstitialThenPlay();
-
         loadRelated();
+
+        // ✅ interstitial harus muncul sebelum play
+        requestedStartPlayback = true;
+        showInterstitialThenPlay();
     }
 
     private void bindViews() {
@@ -176,6 +163,9 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void setupPlayer() {
+        if (startedPlayback) return;
+        startedPlayback = true;
+
         player = new ExoPlayer.Builder(this).build();
         playerView.setPlayer(player);
 
@@ -183,7 +173,7 @@ public class PlayerActivity extends AppCompatActivity {
             MediaItem item = MediaItem.fromUri(Uri.parse(current.videoUrl));
             player.setMediaItem(item);
             player.prepare();
-            // NOTE: jangan play dulu, nanti play setelah interstitial selesai
+            player.play();
         }
     }
 
@@ -217,157 +207,11 @@ public class PlayerActivity extends AppCompatActivity {
         btnLike.setOnClickListener(vv -> incCount("like_"));
         btnFav.setOnClickListener(vv -> incCount("fav_"));
 
-        // Rewarded interstitial pas klik Unduh
+        // ✅ rewarded interstitial pas klik unduh
         btnDownload.setOnClickListener(vv -> showRewardedThenDownload());
 
         btnShare.setOnClickListener(vv -> shareAppLink());
-
         btnFullscreen.setOnClickListener(vv -> toggleFullscreen());
-    }
-
-    // ====== AdMob setup ======
-    private void initAndLoadAds() {
-        try {
-            MobileAds.initialize(this, initializationStatus -> { });
-        } catch (Exception ignored) {}
-
-        loadInterstitial();
-        loadRewardedInterstitial();
-    }
-
-    private void loadInterstitial() {
-        AdRequest req = new AdRequest.Builder().build();
-        InterstitialAd.load(this, ADMOB_INTERSTITIAL_ID, req, new InterstitialAdLoadCallback() {
-            @Override
-            public void onAdLoaded(InterstitialAd ad) {
-                interstitialAd = ad;
-                interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
-                    @Override
-                    public void onAdDismissedFullScreenContent() {
-                        interstitialAd = null;
-                        // preload lagi buat next
-                        loadInterstitial();
-                        // lanjut play kalau pending
-                        if (pendingPlay) {
-                            pendingPlay = false;
-                            safePlay();
-                        }
-                    }
-
-                    @Override
-                    public void onAdFailedToShowFullScreenContent(AdError adError) {
-                        interstitialAd = null;
-                        loadInterstitial();
-                        if (pendingPlay) {
-                            pendingPlay = false;
-                            safePlay();
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void onAdFailedToLoad(LoadAdError err) {
-                interstitialAd = null;
-                // kalau gagal load, tetap boleh play
-                if (pendingPlay) {
-                    pendingPlay = false;
-                    safePlay();
-                }
-            }
-        });
-    }
-
-    private void loadRewardedInterstitial() {
-        AdRequest req = new AdRequest.Builder().build();
-        RewardedInterstitialAd.load(this, ADMOB_REWARDED_INTERSTITIAL_ID, req, new RewardedInterstitialAdLoadCallback() {
-            @Override
-            public void onAdLoaded(RewardedInterstitialAd ad) {
-                rewardedInterstitialAd = ad;
-                rewardedInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
-                    @Override
-                    public void onAdDismissedFullScreenContent() {
-                        rewardedInterstitialAd = null;
-                        // preload lagi buat next
-                        loadRewardedInterstitial();
-                        // kalau user nutup iklan, kita jalanin download kalau pending (tapi reward belum tentu dapet)
-                        if (pendingDownload) {
-                            pendingDownload = false;
-                            // download hanya kalau reward udah diterima (lihat showRewardedThenDownload)
-                        }
-                    }
-
-                    @Override
-                    public void onAdFailedToShowFullScreenContent(AdError adError) {
-                        rewardedInterstitialAd = null;
-                        loadRewardedInterstitial();
-                        if (pendingDownload) {
-                            pendingDownload = false;
-                            // fallback: langsung download kalau gagal show
-                            downloadVideo();
-                        }
-                    }
-                });
-            }
-
-            @Override
-            public void onAdFailedToLoad(LoadAdError err) {
-                rewardedInterstitialAd = null;
-                // no-op, fallback akan langsung download
-            }
-        });
-    }
-
-    // 1) interstitial muncul sebelum video di play
-    private void maybeShowInterstitialThenPlay() {
-        // kalau video kosong, skip
-        if (player == null) return;
-
-        // tandai kita mau play
-        pendingPlay = true;
-
-        // kalau iklan udah siap, tampilkan dulu
-        if (interstitialAd != null) {
-            try {
-                interstitialAd.show(this);
-                return; // play nanti setelah dismiss
-            } catch (Exception ignored) {}
-        }
-
-        // kalau belum ada iklan / error, langsung play
-        pendingPlay = false;
-        safePlay();
-    }
-
-    private void safePlay() {
-        try {
-            if (player != null) player.play();
-        } catch (Exception ignored) {}
-    }
-
-    // 2) rewarded pas klik unduh
-    private void showRewardedThenDownload() {
-        if (rewardedInterstitialAd == null) {
-            // kalau belum ke-load, langsung download biar user gak stuck
-            downloadVideo();
-            // coba load lagi
-            loadRewardedInterstitial();
-            return;
-        }
-
-        pendingDownload = true;
-
-        try {
-            rewardedInterstitialAd.show(this, rewardItem -> {
-                // reward diterima -> baru download
-                pendingDownload = false;
-                downloadVideo();
-            });
-        } catch (Exception e) {
-            pendingDownload = false;
-            downloadVideo();
-            loadRewardedInterstitial();
-        }
     }
 
     // Like/Fav per user (guest vs login)
@@ -531,5 +375,132 @@ public class PlayerActivity extends AppCompatActivity {
             player.release();
             player = null;
         }
+    }
+
+    // =========================
+    // ✅ AdMob Implementation
+    // =========================
+
+    private void initAdMob() {
+        try {
+            MobileAds.initialize(this, initializationStatus -> {});
+        } catch (Exception ignored) {}
+    }
+
+    private void loadInterstitial() {
+        try {
+            AdRequest req = new AdRequest.Builder().build();
+            InterstitialAd.load(
+                    this,
+                    ADMOB_INTERSTITIAL_ID,
+                    req,
+                    new InterstitialAdLoadCallback() {
+                        @Override
+                        public void onAdLoaded(InterstitialAd ad) {
+                            interstitialAd = ad;
+                            interstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                                @Override
+                                public void onAdDismissedFullScreenContent() {
+                                    interstitialAd = null;
+                                    if (requestedStartPlayback) setupPlayer();
+                                    loadInterstitial();
+                                }
+
+                                @Override
+                                public void onAdFailedToShowFullScreenContent(AdError adError) {
+                                    interstitialAd = null;
+                                    if (requestedStartPlayback) setupPlayer();
+                                    loadInterstitial();
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onAdFailedToLoad(LoadAdError err) {
+                            interstitialAd = null;
+                            // kalau gagal load, langsung play aja
+                            if (requestedStartPlayback) setupPlayer();
+                        }
+                    }
+            );
+        } catch (Exception e) {
+            interstitialAd = null;
+            if (requestedStartPlayback) setupPlayer();
+        }
+    }
+
+    private void showInterstitialThenPlay() {
+        // kalau udah mulai play, skip
+        if (startedPlayback) return;
+
+        // kalau ad ready -> show dulu, nanti callback baru setupPlayer()
+        if (interstitialAd != null) {
+            try {
+                interstitialAd.show(this);
+            } catch (Exception e) {
+                setupPlayer();
+            }
+            return;
+        }
+
+        // kalau belum ready, jalanin player (biar user gak nunggu)
+        setupPlayer();
+    }
+
+    private void loadRewardedInterstitial() {
+        try {
+            AdRequest req = new AdRequest.Builder().build();
+            RewardedInterstitialAd.load(
+                    this,
+                    ADMOB_REWARDED_INTERSTITIAL_ID,
+                    req,
+                    new RewardedInterstitialAdLoadCallback() {
+                        @Override
+                        public void onAdLoaded(RewardedInterstitialAd ad) {
+                            rewardedInterstitialAd = ad;
+                            rewardedInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                                @Override
+                                public void onAdDismissedFullScreenContent() {
+                                    rewardedInterstitialAd = null;
+                                    loadRewardedInterstitial();
+                                }
+
+                                @Override
+                                public void onAdFailedToShowFullScreenContent(AdError adError) {
+                                    rewardedInterstitialAd = null;
+                                    loadRewardedInterstitial();
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onAdFailedToLoad(LoadAdError err) {
+                            rewardedInterstitialAd = null;
+                        }
+                    }
+            );
+        } catch (Exception ignored) {
+            rewardedInterstitialAd = null;
+        }
+    }
+
+    private void showRewardedThenDownload() {
+        // kalau ad ready -> show, setelah reward -> download
+        if (rewardedInterstitialAd != null) {
+            try {
+                rewardedInterstitialAd.show(this, rewardItem -> {
+                    // reward didapat -> lanjut download
+                    downloadVideo();
+                });
+                return;
+            } catch (Exception ignored) {
+                // fallback
+                downloadVideo();
+                return;
+            }
+        }
+
+        // kalau belum ready, langsung download (biar gak ngadat)
+        downloadVideo();
     }
             }
